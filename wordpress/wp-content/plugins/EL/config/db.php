@@ -17,4 +17,4 @@ define("DB_PASS_EL", "K3r7mS#SMxJvDgo@dyvxv\$LeooQXN8!$");
 
 
 define("DEBUG", true); // if false, some erorr message won't be printed
-define("COMPANY", "matatu"); // XXX need to implement this dynamically based on who is logged in TODO
+define("HIDDEN",""); // comma separated list of general table fields that should be hidden from view

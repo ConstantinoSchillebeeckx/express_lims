@@ -16,22 +16,25 @@ class Database {
     protected static $db = null; // DB name e.g. db215537_EL
     protected static $company = null; // company associated with logged in user
 
-    public function __construct() {
+    public function __construct($comp) {
 
-        self::$company = COMPANY;
-        self::$db = DB_NAME_EL;
-        $this->name = self::$db;
+        if ($comp) {
 
-        // get list of tables
-        $sql = "SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '" . DB_NAME_EL . "' AND TABLE_NAME like '" . COMPANY . "%'";
-        $results = exec_query($sql);
-        while($row = $results->fetch_assoc()) {
-            $this->tables[] = $row["TABLE_NAME"];
-        }
+            self::$company = $comp;
+            self::$db = DB_NAME_EL;
+            $this->name = self::$db;
 
-        // generate DB structure
-        foreach ($this->tables as $table) {
-            $this->struct[$table] = new Table($table);
+            // get list of tables
+            $sql = "SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '" . DB_NAME_EL . "' AND TABLE_NAME like '" . self::$company . "%'";
+            $results = exec_query($sql);
+            while($row = $results->fetch_assoc()) {
+                $this->tables[] = $row["TABLE_NAME"];
+            }
+
+            // generate DB structure
+            foreach ($this->tables as $table) {
+                $this->struct[$table] = new Table($table);
+            }
         }
     }
 
@@ -65,12 +68,14 @@ class Database {
 
 class Table extends Database {
 
+    protected $fullname = null; // table name with prepended DB
     protected $fields = array(); // list of fields in table
     protected static $table = null; // table name
 
     public function __construct($name) {
         $this->name = $name;
         self::$table = $this->name;
+        $this->fullname = $this->get_db() . '.' . $this->name;
 
         // get list of fields
         $sql = sprintf("DESCRIBE %s.%s", $this->company, $name);
@@ -80,8 +85,8 @@ class Table extends Database {
         }
 
         // check FKs for table
-        $sql = sprintf("select concat(table_name, '.', column_name) as 'foreign key',  
-        concat(referenced_table_name, '.', referenced_column_name) as 'references'
+        $sql = sprintf("select concat(table_schema, '.', table_name, '.', column_name) as 'foreign key',  
+        concat(referenced_table_schema, '.', referenced_table_name, '.', referenced_column_name) as 'references'
         from
             information_schema.key_column_usage
         where
@@ -89,10 +94,15 @@ class Table extends Database {
             and table_schema = '%s' 
             and table_name = '%s'
         ", $this->get_db(), $name);
+        $results = exec_query($sql);
+        $fks = array();
+        while($row = $results->fetch_assoc()) {
+            $fks[$row["foreign key"]] = $row["references"];
+        }
 
         // get details of each field
         foreach ($this->fields as $field) {
-            $this->struct[$field] = new Field($field);
+            $this->struct[$field] = new Field($field, $fks);
         }
      }
 
@@ -123,16 +133,32 @@ class Field extends Table {
                     "ref_by": false
 
 */
+    protected $is_fk; // if field is a foreign key, assumed not
+    protected $fk_ref; // if field is a foreign key, it references this field (full name)
+    protected $hidden; // if field should be hidden from front end view
 
-
-    public function __construct($name) {
+    public function __construct($name, $fks) {
         $this->name = $name;
+        $this->fullname = $this->get_db() . '.' . $this->get_table() . '.' . $this->name;
+
+        if (array_key_exists($this->fullname, $fks)) {
+            $this->is_fk = true;
+            $this->fk_ref = $fks[$this->fullname];
+        } else {
+            $this->is_fk = false;
+            $this->fk_ref = false;
+        }
+
+        if (in_array($this->name, explode(",",HIDDEN))) {
+            $this->hidden = true;
+        } else {
+            $this->hidden = false;
+        }
+
     }
 }
 
 
-$db = new Database();
-$db->show();
 
 /*------------------------------------*\
 	LIMS functions
