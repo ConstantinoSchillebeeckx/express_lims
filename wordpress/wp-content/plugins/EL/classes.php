@@ -6,8 +6,9 @@ require_once("sql_functions.php");
 	LIMS database class
 \*------------------------------------*/
 
-
-
+/*
+TODO
+*/
 class Database {
 
     protected $tables = array(); // array of tables associated with user's company
@@ -16,7 +17,7 @@ class Database {
     protected static $db = null; // DB name e.g. db215537_EL
     protected static $company = null; // company associated with logged in user
 
-    public function __construct($comp) {
+    public function __construct($comp=null) {
 
         if ($comp) {
 
@@ -31,9 +32,25 @@ class Database {
                 $this->tables[] = $row["TABLE_NAME"];
             }
 
+            // check FKs for table
+            $sql = sprintf("select concat(table_schema, '.', table_name, '.', column_name) as 'foreign key',  
+            concat(referenced_table_schema, '.', referenced_table_name, '.', referenced_column_name) as 'references'
+            from
+                information_schema.key_column_usage
+            where
+                referenced_table_name is not null
+                and table_schema = '%s' 
+                and table_name like '%s_%%'
+            ", Database::get_db(), Database::get_company());
+            $results = exec_query($sql);
+            $fks = array();
+            while($row = $results->fetch_assoc()) {
+                $fks[$row["foreign key"]] = $row["references"];
+            }
+
             // generate DB structure
             foreach ($this->tables as $table) {
-                $this->struct[$table] = new Table($table);
+                $this->struct[$table] = new Table($table, $fks);
             }
         }
     }
@@ -47,7 +64,7 @@ class Database {
     }
 
     public function get_company() {
-        return $this->company;
+        return self::$company;
     }
 
     public function get_db() {
@@ -65,39 +82,25 @@ class Database {
     }
 }
 
-
-class Table extends Database {
+/*
+TODO
+*/
+class Table {
 
     protected $fullname = null; // table name with prepended DB
     protected $fields = array(); // list of fields in table
     protected static $table = null; // table name
 
-    public function __construct($name) {
+    public function __construct($name, $fks) {
         $this->name = $name;
         self::$table = $this->name;
-        $this->fullname = $this->get_db() . '.' . $this->name;
+        $this->fullname = Database::get_db() . '.' . $this->name;
 
         // get list of fields
         $sql = sprintf("DESCRIBE %s.%s", $this->company, $name);
         $results = exec_query($sql);
         while($row = $results->fetch_assoc()) {
             $this->fields[] = $row["Field"];
-        }
-
-        // check FKs for table
-        $sql = sprintf("select concat(table_schema, '.', table_name, '.', column_name) as 'foreign key',  
-        concat(referenced_table_schema, '.', referenced_table_name, '.', referenced_column_name) as 'references'
-        from
-            information_schema.key_column_usage
-        where
-            referenced_table_name is not null
-            and table_schema = '%s' 
-            and table_name = '%s'
-        ", $this->get_db(), $name);
-        $results = exec_query($sql);
-        $fks = array();
-        while($row = $results->fetch_assoc()) {
-            $fks[$row["foreign key"]] = $row["references"];
         }
 
         // get details of each field
@@ -112,7 +115,10 @@ class Table extends Database {
 
 }
 
-class Field extends Table {
+/*
+TODO
+*/
+class Field {
 
 
 /*
@@ -133,14 +139,17 @@ class Field extends Table {
                     "ref_by": false
 
 */
-    protected $is_fk; // if field is a foreign key, assumed not
+    protected $is_fk; // if field is a foreign key
     protected $fk_ref; // if field is a foreign key, it references this field (full name)
     protected $hidden; // if field should be hidden from front end view
+    protected $is_ref; // if field is referenced by a foreign key
+    protected $ref; // if field is referenced by a foreign key, this is the field that references it (full name)
 
     public function __construct($name, $fks) {
         $this->name = $name;
-        $this->fullname = $this->get_db() . '.' . $this->get_table() . '.' . $this->name;
+        $this->fullname = Database::get_db() . '.' . Table::get_table() . '.' . $this->name;
 
+        // check if field is fk
         if (array_key_exists($this->fullname, $fks)) {
             $this->is_fk = true;
             $this->fk_ref = $fks[$this->fullname];
@@ -149,6 +158,17 @@ class Field extends Table {
             $this->fk_ref = false;
         }
 
+        // check if field is referenced by fk
+        $tmp = array_search($this->fullname, $fks);
+        if ($tmp) {
+            $this->is_ref = true;
+            $this->ref = $tmp;
+        } else {
+            $this->is_ref = false;
+            $this->ref = false;
+        }
+
+        // check if hidden field
         if (in_array($this->name, explode(",",HIDDEN))) {
             $this->hidden = true;
         } else {
