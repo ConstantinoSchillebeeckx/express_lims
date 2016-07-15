@@ -10,15 +10,17 @@ require_once("sql_functions.php");
 
 class Database {
 
-    public $tables = array(); // array of tables associated with user's company
-    public $struct = array(); // associative array where each table is a key and the value is a class table()
-    public $name = null; // DB name e.g. db215537_EL
-    public $company = null; // company associated with logged in user
+    protected $tables = array(); // array of tables associated with user's company
+    protected $struct = array(); // associative array where each table is a key and the value is a class table()
+    protected $name = null; // DB name e.g. db215537_EL
+    protected static $db = null; // DB name e.g. db215537_EL
+    protected static $company = null; // company associated with logged in user
 
     public function __construct() {
 
-        $this->name = DB_NAME_EL;
-        $this->company = COMPANY;
+        self::$company = COMPANY;
+        self::$db = DB_NAME_EL;
+        $this->name = self::$db;
 
         // get list of tables
         $sql = "SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '" . DB_NAME_EL . "' AND TABLE_NAME like '" . COMPANY . "%'";
@@ -45,21 +47,30 @@ class Database {
         return $this->company;
     }
 
+    public function get_db() {
+        return self::$db;
+    }
+
     public function get_name() {
         return $this->name;
     }
 
+    public function show() {
+        echo '<pre style="font-size:8px;">';
+        print_r($this);
+        echo '</pre>';
+    }
 }
 
 
 class Table extends Database {
 
-    public $name = null;
-    public $fields = array(); // list of fields in table
-    public $struct = array(); // associative array detailing fields, key is field name, value is Field class
+    protected $fields = array(); // list of fields in table
+    protected static $table = null; // table name
 
-    function __construct($name) {
+    public function __construct($name) {
         $this->name = $name;
+        self::$table = $this->name;
 
         // get list of fields
         $sql = sprintf("DESCRIBE %s.%s", $this->company, $name);
@@ -68,17 +79,31 @@ class Table extends Database {
             $this->fields[] = $row["Field"];
         }
 
+        // check FKs for table
+        $sql = sprintf("select concat(table_name, '.', column_name) as 'foreign key',  
+        concat(referenced_table_name, '.', referenced_column_name) as 'references'
+        from
+            information_schema.key_column_usage
+        where
+            referenced_table_name is not null
+            and table_schema = '%s' 
+            and table_name = '%s'
+        ", $this->get_db(), $name);
+
         // get details of each field
         foreach ($this->fields as $field) {
             $this->struct[$field] = new Field($field);
         }
      }
 
+    public function get_table() {
+        return self::$table;
+    }
+
 }
 
 class Field extends Table {
 
-    public $name = null;
 
 /*
 
@@ -100,13 +125,14 @@ class Field extends Table {
 */
 
 
-    function __construct($name) {
+    public function __construct($name) {
         $this->name = $name;
     }
 }
 
 
 $db = new Database();
+$db->show();
 
 /*------------------------------------*\
 	LIMS functions
