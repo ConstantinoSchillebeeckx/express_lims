@@ -1,5 +1,9 @@
-it is assumed that each person that logs in has an associated company
+it is assumed that each person that logs in has an associated 'company'
+stored in the user_meta table.  this is used to check a subset of all
+tables within the EL database
 
-all express lims data is stored in the database _EL
-each company will have tables prepended with their company name e.g. matatu_
+all express lims data is stored in (a single) database _EL
+
+each company will have tables prepended with their company name e.g. matatu_ (always all lowercase)
+
 each generated table will have an accompanying history table
