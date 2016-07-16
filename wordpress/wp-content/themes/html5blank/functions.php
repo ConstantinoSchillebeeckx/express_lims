@@ -105,12 +105,12 @@ function html5blank_header_scripts()
 
     wp_register_script('bootstrap', 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js');
     wp_enqueue_script('bootstrap');
-    wp_enqueue_style('bootstrap', 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css');
-    wp_enqueue_style('font-awesome', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css');
 
     wp_register_script('conditionizr', get_template_directory_uri() . '/js/lib/conditionizr-4.3.0.min.js', array(), '4.3.0');
     wp_enqueue_script('conditionizr');
 
+
+    /*
     // Custom scripts
     wp_register_script(
         'html5blankscripts',
@@ -123,37 +123,24 @@ function html5blank_header_scripts()
 
     // Enqueue Scripts
     wp_enqueue_script('html5blankscripts');
-
+    */
 }
 
 // Load HTML5 Blank conditional scripts
 function html5blank_conditional_scripts()
 {
-    if (is_page('pagenamehere')) {
-        // Conditional script(s)
-        wp_register_script('scriptname', get_template_directory_uri() . '/js/scriptname.js', array('jquery'), '1.0.0');
-        wp_enqueue_script('scriptname');
+    if (is_page('view')) {
+        //wp_register_script('table', get_template_directory_uri() . '/js/table.js', array('jquery'));
+        //wp_enqueue_script('table');
     }
 }
 
 // Load HTML5 Blank styles
 function html5blank_styles()
 {
-    if (HTML5_DEBUG) {
-        // normalize-css
-        wp_register_style('normalize', get_template_directory_uri() . '/bower_components/normalize.css/normalize.css', array(), '3.0.1');
-
-        // Custom CSS
-        wp_register_style('html5blank', get_template_directory_uri() . '/style.css', array('normalize'), '1.0');
-
-        // Register CSS
-        wp_enqueue_style('html5blank');
-    } else {
-        // Custom CSS
-        wp_register_style('html5blankcssmin', get_template_directory_uri() . '/style.css', array(), '1.0');
-        // Register CSS
-        wp_enqueue_style('html5blankcssmin');
-    }
+    wp_enqueue_style('bootstrap', 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css');
+    wp_enqueue_style('font-awesome', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css');
+    wp_enqueue_style('html5blank', get_template_directory_uri() . '/style.css');
 }
 
 // Register HTML5 Blank Navigation
@@ -441,4 +428,12 @@ function html5_shortcode_demo($atts, $content = null)
 function html5_shortcode_demo_2($atts, $content = null) // Demo Heading H2 shortcode, allows for nesting within above element. Fully expandable.
 {
     return '<h2>' . $content . '</h2>';
+}
+
+
+// echo html for not logged in
+function EL_not_logged_in() {
+    
+    echo "<p class='lead'>You must login to view this page!</p>";
+
 }

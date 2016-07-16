@@ -7,10 +7,8 @@
 
     <!-- article -->
     <article id="search">
+        <p class="lead">Front page!</p>
         <?php // content here 
-            global $current_user;
-            $db = new Database( get_user_meta( $current_user->ID, 'company', true) );
-            $db->show();
         ?>
 
     </article>

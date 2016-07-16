@@ -75,6 +75,14 @@ class Database {
         return $this->name;
     }
 
+    public function get_table($table) {
+        return $this->struct[$table];
+    }
+
+    public function get_fields($table) {
+        return $this->struct[$table]->get_fields();
+    }
+
     public function show() {
         echo '<pre style="font-size:8px;">';
         print_r($this);
@@ -113,6 +121,15 @@ class Table {
         return self::$table;
     }
 
+    public function get_fields() {
+        return $this->fields;
+    }
+
+    public function show() {
+        echo '<pre style="font-size:8px;">';
+        print_r($this);
+        echo '</pre>';
+    }
 }
 
 /*
@@ -120,25 +137,6 @@ TODO
 */
 class Field {
 
-
-/*
-
-                    "type": "int",
-                    "null": false,
-                    "key": "PRI",
-                    "extra": "auto_increment",
-                    "name": "PK",
-                    "table": "BioRepo.BacterialCharacterizations",
-                    "default": null,
-                    "is_pk": false,
-                    "viewable": false,
-                    "input": false,
-                    "req": false,
-                    "ref_table": false,
-                    "is_fk": false,
-                    "ref_by": false
-
-*/
     protected $is_fk; // if field is a foreign key
     protected $fk_ref; // if field is a foreign key, it references this field (full name)
     protected $hidden; // if field should be hidden from front end view
@@ -175,6 +173,12 @@ class Field {
             $this->hidden = false;
         }
 
+    }
+
+    public function show() {
+        echo '<pre style="font-size:8px;">';
+        print_r($this);
+        echo '</pre>';
     }
 }
 
