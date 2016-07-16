@@ -1,6 +1,5 @@
 <?php
 
-require_once("sql_functions.php");
 
 /*------------------------------------*\
 	LIMS database class
