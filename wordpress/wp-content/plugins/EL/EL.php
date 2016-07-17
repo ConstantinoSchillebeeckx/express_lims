@@ -97,6 +97,8 @@ name).
 */
 function build_table() {
 
+    include_once("modals.php");
+
     // ensure we have our data
     if ( !isset( $_SESSION['db'] ) || $_SESSION['db'] == NULL ) {
         init_db();

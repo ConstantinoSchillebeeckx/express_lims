@@ -21,9 +21,9 @@ function getData(table, columns, pk) {
 
     // html for Action button column
     var buttonHTML = '<div class="btn-group" role="group">';
-    buttonHTML += '<button onclick="viewHistory()" type="button" class="btn btn-info btn-xs" id="history" title="History"><i class="fa fa-history" aria-hidden="true"></i></button>'
-    buttonHTML += '<button onclick="editRow()" type="button" class="btn-xs btn btn-warning" id="edit" title="Edit"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></button>'
-    buttonHTML += '<button onclick="deleteRow()" type="button" class="btn-xs btn btn-danger" id="delete" title="Delete"><i class="fa fa-times" aria-hidden="true"></i></button>'
+    buttonHTML += '<button data-toggle="modal" data-target="#historyModal" type="button" class="btn btn-info btn-xs" id="history" title="History"><i class="fa fa-history" aria-hidden="true"></i></button>'
+    buttonHTML += '<button data-toggle="modal" data-target="#editModal" type="button" class="btn-xs btn btn-warning" id="edit" title="Edit"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></button>'
+    buttonHTML += '<button data-toggle="modal" data-target="#deleteModal" type="button" class="btn-xs btn btn-danger" id="delete" title="Delete"><i class="fa fa-times" aria-hidden="true"></i></button>'
     buttonHTML += '</div>';
 
 
@@ -55,17 +55,11 @@ function getData(table, columns, pk) {
 };
 
 
+// activate modals
+jQuery('#historyModal').modal({
+})
+jQuery('#editModal').modal({
+})
+jQuery('#deleteModal').modal({
+})
 
-function deleteRow() {
-    console.log('delete row');
-}
-
-
-function editRow() {
-    console.log('edit row');
-}
-
-
-function viewHistory() {
-    console.log('view history');
-}
