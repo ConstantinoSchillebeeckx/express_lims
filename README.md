@@ -7,4 +7,4 @@
 - [ ] modal for editing field info
 - [ ] batch insert/edit/delete
 - [ ] button for deleting record
-- [ ] business logic for tracking history
+- [x] business logic for tracking history
