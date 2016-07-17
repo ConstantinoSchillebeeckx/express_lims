@@ -4,7 +4,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">History</h4>
+        <h4 class="modal-title"><i class="fa fa-history text-info" aria-hidden="true"></i> Item history</h4>
       </div>
       <div class="modal-body">
         History for item <span id="historyID"></span>
@@ -22,7 +22,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Edit</h4>
+        <h4 class="modal-title"><i class="fa fa-pencil-square-o text-warning" aria-hidden="true"></i> Edit item</h4>
       </div>
       <div class="modal-body">
         Editing the item <span id="editID"></span>
@@ -43,7 +43,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Delete row</h4>
+        <h4 class="modal-title"><i class="fa fa-times text-danger" aria-hidden="true"></i> Delete item</h4>
       </div>
       <div class="modal-body">
         Are you sure you want to delete the item <span id="deleteID"></span>?
