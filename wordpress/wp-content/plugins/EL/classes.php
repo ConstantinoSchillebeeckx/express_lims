@@ -25,19 +25,17 @@ class Database {
     protected $tables = array(); // array of tables associated with user's company
     protected $struct = array(); // associative array where each table is a key and the value is a class table()
     protected $name = null; // DB name e.g. db215537_EL
-    protected static $db = null; // DB name e.g. db215537_EL
-    protected static $company = null; // company associated with logged in user
+    protected $company = null; // company associated with logged in user
 
     public function __construct($comp=null) {
 
         if ($comp) {
 
-            self::$company = $comp;
-            self::$db = DB_NAME_EL;
-            $this->name = self::$db;
+            $this->company = $comp;
+            $this->name = DB_NAME_EL;
 
             // get list of tables
-            $sql = "SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '" . DB_NAME_EL . "' AND TABLE_NAME like '" . self::$company . "%'";
+            $sql = "SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '" . DB_NAME_EL . "' AND TABLE_NAME like '" . $this->get_company() . "%'";
             $results = exec_query($sql);
             while($row = $results->fetch_assoc()) {
                 $this->tables[] = $row["TABLE_NAME"];
@@ -52,7 +50,7 @@ class Database {
                 referenced_table_name is not null
                 and table_schema = '%s' 
                 and table_name like '%s_%%'
-            ", Database::get_db(), Database::get_company());
+            ", $this->get_name(), $this->get_company());
             $results = exec_query($sql);
             $fks = array();
             while($row = $results->fetch_assoc()) {
@@ -78,27 +76,30 @@ class Database {
 
     // return name of company for user
     public function get_company() {
-        return self::$company;
+        return $this->company;
     }
 
     // return name of DB
-    public function get_db() {
-        return self::$db;
-    }
-
-    // same as get_db()
     public function get_name() {
-        return get_db();
+        return $this->name;
     }
 
     // given a table (name) return its Table class in struct
     public function get_table($table) {
-        return $this->struct[$table];
+        if ( in_array( $table, $this->get_tables() ) ) {
+            return $this->get_struct()[$table];
+        } else {
+            return false;
+        }
     }
 
     // given a table (name) return fields in table as array
     public function get_fields($table) {
-        return $this->struct[$table]->get_fields();
+        if ( in_array( $table, $this->get_tables() ) ) {
+            return $this->get_struct()[$table]->get_fields();
+        } else {
+            return false;
+        }
     }
 
     // pretty print
@@ -122,11 +123,10 @@ Class roperties:
 class Table {
 
     protected $fields = array(); // list of fields in table
-    protected static $table = null; // table name
+    protected $name = null; // table name
 
     public function __construct($name, $fks) {
         $this->name = $name;
-        self::$table = $this->name;
 
         // get list of fields
         $sql = sprintf("DESCRIBE %s", $this->name);
@@ -141,25 +141,20 @@ class Table {
         }
      }
 
-    // return full table name
-    public function get_table() {
-        return self::$table;
-    }
-
     // same as get_table()
     public function get_name() {
-        return get_table();
+        return $this->name;
     }
 
     // return safe name (without company or DB)
     public function get_safe_name() {
-        return explode("_", $this->get_table())[1];
+        return explode("_", $this->get_name())[1];
     }
 
+    // return full name (with DB prepended)
     public function get_full_name() {
-        return $this->get_db() . '.' . $this-get_table();
+        return $this->get_db() . '.' . $this->get_name();
     }
-
 
     // return array of fields in table
     public function get_fields() {
@@ -168,7 +163,7 @@ class Table {
 
     // return databse table belongs to
     public function get_db() {
-        return Database::get_db();
+        return Database::get_name();
     }
 
     // pretty print
