@@ -84,6 +84,17 @@ class Database {
         return $this->name;
     }
 
+    // return field name that is pk, if it exists
+    // otherwise return false
+    public function get_pk($table) {
+        if ( in_array( $table, $this->get_tables() ) ) {
+            $tmp = $this->get_table($table);
+            return $tmp->get_pk();
+        } else {
+            return false;
+        }
+    }
+
     // given a table (name) return its Table class in struct
     public function get_table($table) {
         if ( in_array( $table, $this->get_tables() ) ) {
@@ -168,6 +179,24 @@ class Table {
         return $this->fields;
     }
 
+    // return table struct as assoc array
+    // keys are field names, values are Field class
+    public function get_struct() {
+        return $this->struct;
+    }
+
+    // return field name that is primary key in table
+    // returns false if none found
+    public function get_pk() {
+        $info = $this->get_struct();
+        foreach ($info as $k => $v) { // $k = field name, $v Field class
+            if ( $v->is_pk() ) {
+                return $k;
+            }
+        }
+        return false;
+    }
+
     // return databse table belongs to
     public function get_db() {
         return Database::get_name();
@@ -208,6 +237,7 @@ class Field {
     protected $key;
     protected $default;
     protected $extra;
+    protected $name;
 
     public function __construct($name, $fks, $info) {
         $this->name = $name;
@@ -247,7 +277,7 @@ class Field {
 
     // return name of field (e.g. sample)
     public function get_name() {
-        return self::$name;
+        return $this->name;
     }
 
     // return full name of field (db123.matatu_samples.sample)
@@ -255,6 +285,10 @@ class Field {
         return Table::get_full_name() . '.' . $this->get_name();
     }    
 
+    // return true if field is a primary key
+    public function is_pk() {
+        return $this->key == 'PRI' ? true : false;
+    }
 
     // pretty print
     public function show() {

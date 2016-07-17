@@ -31,14 +31,13 @@ function get_data_from_db() {
      * Array of database columns which should be read and sent back to DataTables. Use a space where
      * you want to insert a non-database field (for example a counter or static image)
      */
-    $aColumns = $_GET['columns'];
+    $aColumns = $_GET['cols'];
       
     // Indexed column (used for fast and accurate table cardinality)
-    $sIndexColumn = 'id'; // TODO
+    $sIndexColumn = $_GET['pk'];
 
     // Input method (use $_GET, $_POST or $_REQUEST)
     $input =& $_GET;
-     
      
     /**
      * Character set to use for the MySQL connection.
@@ -138,7 +137,7 @@ function get_data_from_db() {
 
      
     $sQuery = "
-        SELECT SQL_CALC_FOUND_ROWS `".implode("`, `", $aQueryColumns)."`
+        SELECT SQL_CALC_FOUND_ROWS `" . implode("`, `", $aQueryColumns) . "`
         FROM `".$sTable."`".$sWhere.$sOrder.$sLimit;
      
     $rResult = $db->query( $sQuery ) or die($db->error);

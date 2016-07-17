@@ -23,7 +23,7 @@ This should be the first step for
 when a user logs in.  It will load
 the overal structure of the database
 for the company associated with the
-user and store it in $GLOBALS['db'].
+user and store it in $_SESSION['db'].
 
 This function is hooked into wp_login:
 will automatically be called once 
@@ -33,7 +33,7 @@ Parameters:
 - none
 
 Returns:
-- will return true and set $GLOBALS['db']
+- will return true and set $_SESSION['db']
   if user is logged in and has an associated
   company with their profile; otherwise
   returns false.
@@ -45,7 +45,7 @@ function init_db() {
     $comp = get_company();
     if ( isset( $comp ) ) {
     
-        $GLOBALS['db'] = new Database( $comp );        
+        $_SESSION['db'] = new Database( $comp );        
         return true;
 
     }
@@ -98,11 +98,11 @@ name).
 function build_table() {
 
     // ensure we have our data
-    if ( !isset( $GLOBALS['db'] ) || $GLOBALS['db'] == NULL ) {
+    if ( !isset( $_SESSION['db'] ) || $_SESSION['db'] == NULL ) {
         init_db();
     }
 
-    $db = $GLOBALS['db'];
+    $db = $_SESSION['db'];
     if ( isset( $_GET['table'] ) ) {
         $table = $db->get_company() . "_" . $_GET['table']; // GET should pass safe name of table
     }
@@ -128,18 +128,19 @@ function build_table() {
             $html .= sprintf('<th>%s</th>', $field); 
         }
 
+        $html .= '<th>Action</th>';
         $html .= '</tr>';
         $html .= '</thead>';
         $html .= '</table>';
 
         echo $html;
-
         ?>
         <script type="text/javascript">
             // This will do the AJAX call, func defined in js/table.js
             var table = <?php echo json_encode($table); ?>;
             var columns = <?php echo json_encode($fields); ?>;
-            getData(table, columns);
+            var pk = <?php echo json_encode($db->get_pk($table)); ?>;
+            getData(table, columns, pk);
         </script>
         <?php
 

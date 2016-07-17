@@ -19,7 +19,7 @@ get_header(); ?>
 
                     <?php 
                         init_db();
-                        $GLOBALS['db']->show();
+                        $_SESSION['db']->show();
                     ?>
 
                 </article>
