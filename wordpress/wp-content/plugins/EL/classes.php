@@ -95,11 +95,13 @@ TODO
 class Table {
 
     protected $fullname = null; // table name with prepended DB
+    protected $safe_name = null; // table name without company prepended
     protected $fields = array(); // list of fields in table
     protected static $table = null; // table name
 
     public function __construct($name, $fks) {
         $this->name = $name;
+        $this->safe_name = explode("_",$name)[1];
         self::$table = $this->name;
         $this->fullname = Database::get_db() . '.' . $this->name;
 
