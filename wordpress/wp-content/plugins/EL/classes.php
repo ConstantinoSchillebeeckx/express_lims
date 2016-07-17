@@ -129,15 +129,22 @@ class Table {
         $this->name = $name;
 
         // get list of fields
-        $sql = sprintf("DESCRIBE %s", $this->name);
+        $sql = sprintf("SHOW FIELDS FROM %s", $this->name);
         $results = exec_query($sql);
+        $info = array();
         while($row = $results->fetch_assoc()) {
             $this->fields[] = $row["Field"];
+            $info[$row['Field']] = array("Type" => $row['Type'], 
+                                           "Null" => $row['Null'],
+                                           "Key" => $row['Key'],
+                                           "Default" => $row['Default'],
+                                           "Extra" => $row['Extra']
+                                            );
         }
 
         // get details of each field
         foreach ($this->fields as $field) {
-            $this->struct[$field] = new Field($field, $fks);
+            $this->struct[$field] = new Field($field, $fks, $info);
         }
      }
 
@@ -183,6 +190,11 @@ Class properties:
 - hidden : bool for whether field should be hidden from front-end view
 - is_ref : bool if field is referenced by a foreign key (this makes the field a primary key)
 - ref : if field is referenced by a foreign key, this is the field that references it (full_name)
+- type : field type (e.g. datetime, varchar, etc)
+- null : bool if field can be NULL
+- key: can be empty, PRI, UNI or MUL (see https://dev.mysql.com/doc/refman/5.7/en/show-columns.html)
+- default : default value of field
+- extra : any additional information that is available about a given column
 */
 class Field {
 
@@ -191,9 +203,19 @@ class Field {
     protected $hidden; // if field should be hidden from front end view
     protected $is_ref; // if field is referenced by a foreign key
     protected $ref; // if field is referenced by a foreign key, this is the field that references it (full name)
+    protected $type;
+    protected $null;
+    protected $key;
+    protected $default;
+    protected $extra;
 
-    public function __construct($name, $fks) {
+    public function __construct($name, $fks, $info) {
         $this->name = $name;
+        $this->type = $info[$name]["Type"];
+        $this->null = $info[$name]["Null"] == "YES" ? true : false;
+        $this->key = $info[$name]["Key"];
+        $this->default = $info[$name]["Default"];
+        $this->extra = $info[$name]["Extra"];
 
         // check if field is fk
         if (array_key_exists($this->name, $fks)) {
