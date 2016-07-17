@@ -21,9 +21,9 @@ function getData(table, columns, pk) {
 
     // html for Action button column
     var buttonHTML = '<div class="btn-group" role="group">';
-    buttonHTML += '<button data-toggle="modal" data-target="#historyModal" type="button" class="btn btn-info btn-xs" id="history" title="History"><i class="fa fa-history" aria-hidden="true"></i></button>'
-    buttonHTML += '<button data-toggle="modal" data-target="#editModal" type="button" class="btn-xs btn btn-warning" id="edit" title="Edit"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></button>'
-    buttonHTML += '<button data-toggle="modal" data-target="#deleteModal" type="button" class="btn-xs btn btn-danger" id="delete" title="Delete"><i class="fa fa-times" aria-hidden="true"></i></button>'
+    buttonHTML += '<button onclick="historyModal(this)" type="button" class="btn btn-info btn-xs" title="History"><i class="fa fa-history" aria-hidden="true"></i></button>'
+    buttonHTML += '<button onclick="editModal(this)" type="button" class="btn-xs btn btn-warning" title="Edit"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></button>'
+    buttonHTML += '<button onclick="deleteModal(this)" type="button" class="btn-xs btn btn-danger" title="Delete"><i class="fa fa-times" aria-hidden="true"></i></button>'
     buttonHTML += '</div>';
 
 
@@ -46,20 +46,124 @@ function getData(table, columns, pk) {
                 "data": null,
                 "defaultContent": buttonHTML,
                 "width": "20px",
-            },{ 
-                "targets": columns, 
-                "render": function (data, type, row ) { return data; }
             }
         ]
     } );
 };
 
 
+/* Function called when action button delete clicked
+
+Because none of the buttons have a specified ID, we
+need to use some jQuery to figure out which button
+was clicked and thus which row the user is trying
+to act on.  This function will figure out the ID
+of the first column item and update the modal with
+its value.  It will then display the modal as well as
+set the proper onclick event for the confirm delete button
+
+Parameters:
+- sel : will be the 'a' selection of the button that was clicked
+
+*/
+function deleteModal(sel) {
+
+    // find first col value (PK) of row from button press
+    var val = jQuery(sel).parents("tr").find(">:first-child").html()
+    jQuery("#deleteID").html( "<code>" + val + "</code>" ); // set PK message
+    jQuery('#deleteModal').modal('toggle'); // show modal
+    jQuery("#confirmDelete").attr("onclick", "deleteItem('" + val + "')");
+}
+
+
+/* Function called when use confirms to delete an item
+
+Function will make an AJAX call to the server to delete
+the selected item.
+
+Parameters:
+- id : name displayed in the first column of the row that
+       the user is requesting to delete.
+
+*/
+function deleteItem(id) {
+    console.log("delete",id);
+    jQuery('#deleteModal').modal('toggle'); // hide modal
+}
+
+
+/* Function called when action button history clicked
+
+Because none of the buttons have a specified ID, we
+need to use some jQuery to figure out which button
+was clicked and thus which row the user is trying
+to act on.  This function will figure out the ID
+of the first column item and update the modal with
+its value.  It will then display the modal.
+
+Parameters:
+- sel : will be the 'a' selection of the button that was clicked
+
+*/
+function historyModal(sel) {
+
+    // find first col value (PK) of row from button press
+    var val = jQuery(sel).parents("tr").find(">:first-child").html()
+    jQuery("#historyID").html( "<code>" + val + "</code>" ); // set PK message
+    jQuery('#historyModal').modal('toggle'); // show modal
+}
+
+
+
+/* Function called when action button 'edit' clicked
+
+Because none of the buttons have a specified ID, we
+need to use some jQuery to figure out which button
+was clicked and thus which row the user is trying
+to act on.  This function will figure out the ID
+of the first column item and update the modal with
+its value.  It will then display the modal as well as
+set the proper onclick event for the confirm edit button
+
+Parameters:
+- sel : will be the 'a' selection of the button that was clicked
+
+*/
+function editModal(sel) {
+
+    // find first col value (PK) of row from button press
+    var val = jQuery(sel).parents("tr").find(">:first-child").html()
+    jQuery("#editID").html( "<code>" + val + "</code>" ); // set PK message
+    jQuery('#editModal').modal('toggle'); // show modal
+    jQuery("#confirmEdit").attr("onclick", "editItem('" + val + "')");
+}
+
+
+/* Function called when use confirms to delete an item
+
+Function will make an AJAX call to the server to delete
+the selected item.
+
+Parameters:
+- id : name displayed in the first column of the row that
+       the user is requesting to delete.
+
+*/
+function editItem(id) {
+    console.log("edit",id);
+    jQuery('#editModal').modal('toggle'); // hide modal
+}
+
+
 // activate modals
-jQuery('#historyModal').modal({
+jQuery(document).ready(function($) {
+    jQuery('#historyModal').modal({ show: false })
+    jQuery('#editModal').modal({ show: false})
+    jQuery('#deleteModal').modal({ show: false})
 })
-jQuery('#editModal').modal({
-})
-jQuery('#deleteModal').modal({
-})
+
+
+
+
+
 

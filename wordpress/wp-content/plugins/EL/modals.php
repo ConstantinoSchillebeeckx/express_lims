@@ -7,11 +7,7 @@
         <h4 class="modal-title" id="myModalLabel">History</h4>
       </div>
       <div class="modal-body">
-        ...
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Save changes</button>
+        History for item <span id="historyID"></span>
       </div>
     </div>
   </div>
@@ -29,11 +25,11 @@
         <h4 class="modal-title" id="myModalLabel">Edit</h4>
       </div>
       <div class="modal-body">
-        ...
+        Editing the item <span id="editID"></span>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Save changes</button>
+        <a href="#" class="btn" data-dismiss="modal">Cancel</a>
+        <button type="button" class="btn btn-primary" id="confirmEdit">Save changes</button>
       </div>
     </div>
   </div>
@@ -47,14 +43,14 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Delete</h4>
+        <h4 class="modal-title" id="myModalLabel">Delete row</h4>
       </div>
       <div class="modal-body">
-        ...
+        Are you sure you want to delete the item <span id="deleteID"></span>?
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Save changes</button>
+        <a href="#" class="btn" data-dismiss="modal">Cancel</a>
+        <button type="button" class="btn btn-danger" id="confirmDelete">Delete item</button>
       </div>
     </div>
   </div>

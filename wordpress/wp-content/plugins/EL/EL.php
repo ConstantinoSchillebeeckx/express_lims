@@ -109,15 +109,6 @@ function build_table() {
         $table = $db->get_company() . "_" . $_GET['table']; // GET should pass safe name of table
     }
 
-    echo 'Tables:';
-    echo '<ul>';
-    foreach ($db->get_struct() as $name => $table_class) {
-        $safe = $table_class->get_safe_name();
-        echo "<li><a href='/view/?table=$safe'>$safe</a></li>";
-    }
-    echo '</ul>';
-
-
     if ( isset( $db ) && isset( $table ) && $db->get_table( $table ) ) {
     
         $fields = $db->get_fields($table);
