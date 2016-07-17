@@ -8,4 +8,5 @@
 - [ ] batch insert/edit/delete
 - [ ] button for deleting record
 - [ ] business logic for tracking history
-- [ ] add field type to Field class (e.g. Timestamp, Int, varchar)
+- [x] add field type to Field class (e.g. Timestamp, Int, varchar)
+- [ ] filtering view by clicking on item
