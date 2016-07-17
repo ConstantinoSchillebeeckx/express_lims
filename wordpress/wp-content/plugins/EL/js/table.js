@@ -13,14 +13,17 @@ queried by AJAX.  Both must have the same columns.
 */
 
 
-//jQuery(document).ready(function($) {
 function getData(table, columns) {
     jQuery('#datatable').DataTable( {
         "processing": true,
         "serverSide": true,
         "ajax": {
             "url": ajax_object.ajax_url,
-            "data": {"action": "viewTable", "table": table, "columns": columns},
+            "data": {
+                "action": "viewTable", 
+                "table": table, 
+                "columns": columns,
+                },
             }
     } );
 };

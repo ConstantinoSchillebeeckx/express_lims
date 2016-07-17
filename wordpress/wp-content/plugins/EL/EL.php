@@ -84,6 +84,16 @@ function get_company() {
 
 /* Build table HTML for view
 
+Main function for building table that
+will display results of DB query.  Will
+do all the HTML rendering as well as
+do the AJAX call to the server.
+
+Function expects GET['table'] to be set
+with the safe name of the table (e.g.
+table name without the prepended company
+name).
+
 */
 function build_table() {
 
@@ -92,8 +102,8 @@ function build_table() {
         init_db();
     }
 
-    $table = $_GET['table'];
     $db = $GLOBALS['db'];
+    $table = $db->get_company() . "_" . $_GET['table']; // GET should pass safe name of table
 
     if ( isset( $db ) && isset( $table ) && $db->get_table( $table ) ) {
     

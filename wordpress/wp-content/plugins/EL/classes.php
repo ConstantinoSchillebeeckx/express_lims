@@ -5,7 +5,19 @@
 	LIMS database class
 \*------------------------------------*/
 
-/*
+/* Database class for loading structure of LIMS database
+
+Once a user logs in, the general structure of the database
+associated with the company of that user is loaded.
+
+Class properties:
+- tables : array of tables associated with user's company
+- struct : associative array where each table is a key and
+           the value is a class Table
+- name : name of database e.g. db215537_EL
+- db : same as name but defined as static
+- company : company associated with logged in user
+
 TODO
 */
 class Database {
@@ -54,34 +66,42 @@ class Database {
         }
     }
 
+    // return array of full table names
     public function get_tables() {
         return $this->tables;
     }
     
+    // return assoc array of table struct
     public function get_struct() {
         return $this->struct;
     }
 
+    // return name of company for user
     public function get_company() {
         return self::$company;
     }
 
+    // return name of DB
     public function get_db() {
         return self::$db;
     }
 
+    // same as get_db()
     public function get_name() {
-        return $this->name;
+        return get_db();
     }
 
+    // given a table (name) return its Table class in struct
     public function get_table($table) {
         return $this->struct[$table];
     }
 
+    // given a table (name) return fields in table as array
     public function get_fields($table) {
         return $this->struct[$table]->get_fields();
     }
 
+    // pretty print
     public function show() {
         echo '<pre style="font-size:8px;">';
         print_r($this);
@@ -89,24 +109,27 @@ class Database {
     }
 }
 
-/*
-TODO
+/* Table class defines properties of a given database table
+
+Class roperties:
+- struct : associative array where each field is a key and
+           the value is a class Field
+- name : name of table with prepended company (e.g. matatu_samples)
+- table : same as name but as a static type
+- fields : array of fields contained in table
+
 */
 class Table {
 
-    protected $fullname = null; // table name with prepended DB
-    protected $safe_name = null; // table name without company prepended
     protected $fields = array(); // list of fields in table
     protected static $table = null; // table name
 
     public function __construct($name, $fks) {
         $this->name = $name;
-        $this->safe_name = explode("_",$name)[1];
         self::$table = $this->name;
-        $this->fullname = Database::get_db() . '.' . $this->name;
 
         // get list of fields
-        $sql = sprintf("DESCRIBE %s.%s", $this->company, $name);
+        $sql = sprintf("DESCRIBE %s", $this->name);
         $results = exec_query($sql);
         while($row = $results->fetch_assoc()) {
             $this->fields[] = $row["Field"];
@@ -118,14 +141,37 @@ class Table {
         }
      }
 
+    // return full table name
     public function get_table() {
         return self::$table;
     }
 
+    // same as get_table()
+    public function get_name() {
+        return get_table();
+    }
+
+    // return safe name (without company or DB)
+    public function get_safe_name() {
+        return explode("_", $this->get_table())[1];
+    }
+
+    public function get_full_name() {
+        return $this->get_db() . '.' . $this-get_table();
+    }
+
+
+    // return array of fields in table
     public function get_fields() {
         return $this->fields;
     }
 
+    // return databse table belongs to
+    public function get_db() {
+        return Database::get_db();
+    }
+
+    // pretty print
     public function show() {
         echo '<pre style="font-size:8px;">';
         print_r($this);
@@ -133,8 +179,15 @@ class Table {
     }
 }
 
-/*
-TODO
+/* Field class defined properties of a given column in a table
+
+Class properties:
+- name : name of field (e.g. sampleType)
+- is_fk : bool for if a field is a foreign key
+- fk_ref : if a field is a foreign key, it references this field (full_name)
+- hidden : bool for whether field should be hidden from front-end view
+- is_ref : bool if field is referenced by a foreign key (this makes the field a primary key)
+- ref : if field is referenced by a foreign key, this is the field that references it (full_name)
 */
 class Field {
 
@@ -146,19 +199,18 @@ class Field {
 
     public function __construct($name, $fks) {
         $this->name = $name;
-        $this->fullname = Database::get_db() . '.' . Table::get_table() . '.' . $this->name;
 
         // check if field is fk
-        if (array_key_exists($this->fullname, $fks)) {
+        if (array_key_exists($this->name, $fks)) {
             $this->is_fk = true;
-            $this->fk_ref = $fks[$this->fullname];
+            $this->fk_ref = $fks[$this->name];
         } else {
             $this->is_fk = false;
             $this->fk_ref = false;
         }
 
         // check if field is referenced by fk
-        $tmp = array_search($this->fullname, $fks);
+        $tmp = array_search($this->name, $fks);
         if ($tmp) {
             $this->is_ref = true;
             $this->ref = $tmp;
@@ -176,6 +228,18 @@ class Field {
 
     }
 
+    // return name of field (e.g. sample)
+    public function get_name() {
+        return self::$name;
+    }
+
+    // return full name of field (db123.matatu_samples.sample)
+    public function get_full_name() {
+        return Table::get_full_name() . '.' . $this->get_name();
+    }    
+
+
+    // pretty print
     public function show() {
         echo '<pre style="font-size:8px;">';
         print_r($this);
