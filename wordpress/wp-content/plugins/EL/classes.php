@@ -95,10 +95,20 @@ class Database {
         }
     }
 
-    // given a table (name) return its Table class in struct
+    // given a table (name) return its Table class
     public function get_table($table) {
         if ( in_array( $table, $this->get_tables() ) ) {
             return $this->get_struct()[$table];
+        } else {
+            return false;
+        }
+    }
+
+    // given a table (name) return its full name (with prepended DB)
+    public function get_table_full_name($table) {
+        if ( in_array( $table, $this->get_tables() ) ) {
+            $table_class = $this->get_table($table);
+            return $table_class->get_full_name();
         } else {
             return false;
         }
@@ -307,29 +317,6 @@ class Field {
 
 
 
-
-/* Echo boostrap alert message
-
-Parameters:
-===========
-- msg : str
-        message (as HTML) to display to user,
-        will place div alert around msg
-- debug : bool (optional)
-          if true, message will be printed, if
-          false, message will not be printed.
-          this allows for setting a global
-          DEBUG
-          
-*/
-
-function err_msg($msg, $debug=true) {
-
-    if ($debug) {
-        echo '<div class="alert alert-danger col-sm-3" role="alert">' . $msg . '</div>';
-    }
-
-}
 
 
 

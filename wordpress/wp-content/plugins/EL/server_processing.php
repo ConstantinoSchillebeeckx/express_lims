@@ -1,5 +1,103 @@
 <?php
 
+/*------------------------------------*\
+	    SQL server-side functions
+\*------------------------------------*/
+
+/* Generate a select with list of DB tables
+
+Parameters:
+- $tables : array
+            list of tables
+
+Returns:
+- echos HTML of select
+
+*/
+function get_tables_as_select($tables) {
+
+    $sel = '<select>';
+    foreach ( $tables as $table ) {
+        $sel .= sprintf("<option value='%s'>%s</option>", $table, $table);
+    }
+    $sel .= '</select>';
+
+    echo $sel;
+
+}
+
+
+
+
+/* Connect to database
+
+Create a connection to the database, show
+error if connection cannot be made.
+
+Parameters:
+===========
+- none
+
+Return:
+=======
+- returns a mysqli connection object if
+  successful connection, echo error
+  otherwise and return false.
+
+*/
+function connect_db() {
+    require_once("config/db.php");
+    $conn = new mysqli(DB_HOST_EL, DB_USER_EL, DB_PASS_EL, DB_NAME_EL);
+
+    if (!$conn->connect_errno) {
+        return $conn;
+    } else {
+        err_msg("Could not connect to database!");
+        return false;
+    }
+
+}
+
+
+
+
+/* Execute SQL query
+
+Will execute a given SQL query
+
+Parameters:
+===========
+- sql : sql string
+- conn : MYSQLi connection object (optional)
+
+Returns:
+========
+- false if no connection could be made to DB,
+  otherwise returns the results of the query
+
+*/
+function exec_query($sql, $conn=null) {
+
+    if (!$conn) {
+        $conn = connect_db();
+    }
+
+    if ($conn) {
+        $res = $conn->query($sql);
+        if (!$res) {
+            err_msg("Error running query: " . $sql, DEBUG);
+            return false;
+        } else {
+            return $res;
+        }
+    } else {
+        return false;
+    }
+    $conn.close();
+}
+
+
+
 /* Process data from AJAX call
 
 Function is called every time an AJAX call is 
@@ -179,6 +277,86 @@ function get_data_from_db() {
       
     return json_encode( $output );
 }
+
+
+
+
+
+
+
+/* Delete item from DB
+
+Function is called by AJAX when user clicks delete
+button.  Will delete item from table and will
+update history.  AJAX call made by deleteItem() in
+js/table.js
+
+Parameters:
+- $_POST['id'] : name of the item being deleted
+- $_POST['table'] : name of table in which item is located
+- $_POST['pk'] : column in which item exists
+
+
+*/
+function delete_item_from_db() {
+
+    // get some vars
+    $db = get_db();
+    $id = $_POST['id'];
+    $table = $_POST['table'];
+    $pk = $_POST['pk'];
+    $table_full_name = $db->get_name() . '.' . $table;
+
+    // delete row
+    $sql = sprintf("DELETE FROM %s WHERE `%s` = '%s'", $table_full_name, $pk, $id);
+    //if (exec_query($sql)) {
+        $msg = sprintf("The item %s was properly archived.", $id);
+        $ret = array("msg" => $msg, "status" => true);
+    //}
+
+
+    // update history
+
+    return json_encode($ret);
+}
+
+
+
+
+
+/* Echo boostrap alert message
+
+Parameters:
+===========
+- msg : str
+        message (as HTML) to display to user,
+        will place div alert around msg
+- debug : bool (optional)
+          if true, message will be printed, if
+          false, message will not be printed.
+          this allows for setting a global
+          DEBUG
+- size : int (optional)
+         boostrap col-sm-X width
+*/
+
+function err_msg($msg, $debug=true, $size=12) {
+
+    if ($debug) {
+        echo '<div class="alert alert-danger col-sm-'. $size .'" role="alert">' . $msg . '</div>';
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
 
 
 ?>

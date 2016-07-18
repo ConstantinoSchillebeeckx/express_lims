@@ -87,8 +87,31 @@ Parameters:
 
 */
 function deleteItem(id) {
-    console.log("delete",id);
+
     jQuery('#deleteModal').modal('toggle'); // hide modal
+        
+    var data = {
+            "action": "deleteItem", 
+            "id": id, 
+            "table": table, // var set by build_table() in EL.php
+            "pk": pk, // var set by build_table() in EL.php
+    }
+
+    // send via AJAX to process with PHP
+    jQuery.ajax({
+            url: ajax_object.ajax_url, 
+            type: "GET",
+            data: data, 
+            dataType: 'json',
+            success: function(response) {
+                showMsg(response);
+                $('#datatable').DataTable().draw('page'); // refresh table XXX not sure if working https://datatables.net/reference/api/draw()
+            },
+            error: function(response) {
+                console.log(response);
+            }
+    });
+
 }
 
 
@@ -164,6 +187,29 @@ jQuery(document).ready(function($) {
 
 
 
+/* Catch AJAX response and show message if needed
 
+Parameters:
+===========
+- dat : object
+        -> msg : msg to display)
+        -> status : bool - true if success msg, false if error msg
+
+*/
+function showMsg(dat) {
+
+    var type = dat.status ? 'success' : 'danger';
+    var msg = dat.msg;
+    var alertDiv = '<div id="alertDiv" class="alert alert-' + type + ' alert-dismissible" role="alert">' + msg + '</div>';
+
+    jQuery( alertDiv ).prependTo( "main" );
+
+    // automatically hide msg after 3s
+    setTimeout(function () {
+        jQuery("#alertDiv").fadeTo(2000, 500).slideUp(500, function ($) {
+            jQuery("#alert_div").remove();
+        });
+    }, 3000);
+}
 
 

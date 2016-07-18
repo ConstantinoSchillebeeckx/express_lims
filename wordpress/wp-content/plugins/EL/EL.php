@@ -15,7 +15,17 @@
 
 require_once("config/db.php");
 require_once("classes.php");
+include_once("server_processing.php");
 
+
+
+
+
+
+
+/*------------------------------------*\
+	    Wordpress side functions
+\*------------------------------------*/
 
 /* Load the DB structure
 
@@ -99,12 +109,8 @@ function build_table() {
 
     include_once("modals.php");
 
-    // ensure we have our data
-    if ( !isset( $_SESSION['db'] ) || $_SESSION['db'] == NULL ) {
-        init_db();
-    }
+    $db = get_db();
 
-    $db = $_SESSION['db'];
     if ( isset( $_GET['table'] ) ) {
         $table = $db->get_company() . "_" . $_GET['table']; // GET should pass safe name of table
     }
@@ -145,98 +151,39 @@ function build_table() {
 }
 
 
-/* Generate a select with list of DB tables
+/* Helper function for getting DB structure
 
-Parameters:
-- $tables : array
-            list of tables
+When called, function will check if DB structure
+has been loaded into $_SESSION; if not it will do
+so.
 
 Returns:
-- echos HTML of select
+========
+- Database class object
 
 */
-function get_tables_as_select($tables) {
+function get_db() {
 
-    $sel = '<select>';
-    foreach ( $tables as $table ) {
-        $sel .= sprintf("<option value='%s'>%s</option>", $table, $table);
+    // ensure we have our data
+    if ( !isset( $_SESSION['db'] ) || $_SESSION['db'] == NULL ) {
+        init_db();
     }
-    $sel .= '</select>';
 
-    echo $sel;
-
+    return $_SESSION['db'];
 }
 
 
 
-/* Connect to database
+/* Setup PHP functions called by AJAX on the font end
 
-Create a connection to the database, show
-error if connection cannot be made.
+Since using wordpress, we have to register each PHP
+function that will be handling an AJAX request.
 
-Parameters:
-===========
-- none
-
-Return:
-=======
-- returns a mysqli connection object if
-  successful connection, echo error
-  otherwise and return false.
+All of these functions are defined in server_processing.php
 
 */
-function connect_db() {
-    require_once("config/db.php");
-    $conn = new mysqli(DB_HOST_EL, DB_USER_EL, DB_PASS_EL, DB_NAME_EL);
 
-    if (!$conn->connect_errno) {
-        return $conn;
-    } else {
-        err_msg("Could not connect to database!");
-        return false;
-    }
-
-}
-
-
-
-function exec_query($sql, $conn=null) {
-
-    if (!$conn) {
-        $conn = connect_db();
-    }
-
-    if ($conn) {
-        $res = $conn->query($sql);
-        if (!$res) {
-            err_msg("Error running query: " . $sql, DEBUG);
-        } else {
-            return $res;
-        }
-    } else {
-        return false;
-    }
-
-    $conn.close();
-
-}
-
-
-
-
-/* Process data from AJAX call
-
-Function is called every time an AJAX call is 
-made for data for viewing the DB.  This is done
-when the function build_table() is called [in
-EL.php]
-
-Function assumes that the following are passed:
-- $_GET['table']
-- $_GET['columns']
-
-*/
-include_once("server_processing.php");
+// main function to query DB for viewing data
 add_action( 'wp_ajax_viewTable', 'viewTable_callback' );
 function viewTable_callback() {
 
@@ -245,28 +192,17 @@ function viewTable_callback() {
     wp_die(); // this is required to terminate immediately and return a proper response
 }
 
+// delete item (row) from db
+add_action( 'wp_ajax_deleteItem', 'deleteItem_callback' );
+function deleteItem_callback() {
+
+    echo delete_item_from_db(); // defined in server_processing.php
+
+    wp_die(); // this is required to terminate immediately and return a proper response
+}
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*------------------------------------*\
-	Custom User Roles
-\*------------------------------------*/
 
 /*
 	One new role is created in order
