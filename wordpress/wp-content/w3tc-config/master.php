@@ -420,7 +420,7 @@ return array(
 	'browsercache.other.etag' => false,
 	'browsercache.other.w3tc' => false,
 	'browsercache.other.replace' => false,
-	'browsercache.timestamp' => '1468785456',
+	'browsercache.timestamp' => '1468848358',
 	'browsercache.replace.exceptions' => array(
 	),
 	'mobile.enabled' => false,

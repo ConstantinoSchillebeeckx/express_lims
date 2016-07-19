@@ -104,8 +104,8 @@ function deleteItem(id) {
             data: data, 
             dataType: 'json',
             success: function(response) {
+                jQuery('#datatable').DataTable().draw('page'); // refresh table XXX not sure if working https://datatables.net/reference/api/draw()
                 showMsg(response);
-                $('#datatable').DataTable().draw('page'); // refresh table XXX not sure if working https://datatables.net/reference/api/draw()
             },
             error: function(response) {
                 console.log(response);
