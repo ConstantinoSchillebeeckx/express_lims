@@ -104,11 +104,12 @@ function deleteItem(id) {
             data: data, 
             dataType: 'json',
             success: function(response) {
-                jQuery('#datatable').DataTable().draw('page'); // refresh table XXX not sure if working https://datatables.net/reference/api/draw()
+                jQuery('#datatable').DataTable().draw('page');
                 showMsg(response);
             },
-            error: function(response) {
-                console.log(response);
+            error: function(xhr, status, error) {
+                console.log(xhr.responseText);
+                showMsg({"msg":"There ws an error, please try again.", "status": false});
             }
     });
 

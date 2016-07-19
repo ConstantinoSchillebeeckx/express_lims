@@ -85,8 +85,7 @@ function exec_query($sql, $conn=null) {
     if ($conn) {
         $res = $conn->query($sql);
         if (!$res) {
-            err_msg("Error running query: " . $sql, DEBUG);
-            return false;
+            err_msg("Error running query: " . $sql . '; the error was: ' . $conn->error);
         } else {
             return $res;
         }
@@ -302,17 +301,21 @@ function delete_item_from_db() {
 
     // get some vars
     $db = get_db();
-    $id = $_POST['id'];
-    $table = $_POST['table'];
-    $pk = $_POST['pk'];
+    $id = $_GET['id'];
+    $table = $_GET['table'];
+    $pk = $_GET['pk'];
     $table_full_name = $db->get_name() . '.' . $table;
+
+
+    // TODO we need to run a check when deleting a primary key that is being referenced as a foreign key
 
     // delete row
     $sql = sprintf("DELETE FROM %s WHERE `%s` = '%s'", $table_full_name, $pk, $id);
-    //if (exec_query($sql)) {
+    if (exec_query($sql)) {
         $msg = sprintf("The item %s was properly archived.", $id);
-        $ret = array("msg" => $msg, "status" => true);
-    //}
+        $status = true;
+        $ret = array("msg" => $msg, "status" => $status);
+    }
 
 
     // update history
@@ -336,14 +339,12 @@ Parameters:
           false, message will not be printed.
           this allows for setting a global
           DEBUG
-- size : int (optional)
-         boostrap col-sm-X width
 */
 
-function err_msg($msg, $debug=true, $size=12) {
+function err_msg($msg, $debug=DEBUG) {
 
     if ($debug) {
-        echo '<div class="alert alert-danger col-sm-'. $size .'" role="alert">' . $msg . '</div>';
+        echo $msg;
     }
 
 }

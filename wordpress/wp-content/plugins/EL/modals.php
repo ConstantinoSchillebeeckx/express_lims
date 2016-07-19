@@ -43,14 +43,14 @@
     <div class="modal-content panel-danger">
       <div class="modal-header panel-heading">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title"><i class="fa fa-times" aria-hidden="true"></i> Delete item</h4>
+        <h4 class="modal-title"><i class="fa fa-times" aria-hidden="true"></i> Archive item</h4>
       </div>
       <div class="modal-body">
-        Are you sure you want to delete the item <span id="deleteID"></span>?
+        Are you sure you want to archive the item <span id="deleteID"></span>?
       </div>
       <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-        <button type="button" class="btn btn-danger" id="confirmDelete">Delete item</button>
+        <button type="button" class="btn btn-danger" id="confirmDelete">Archive item</button>
       </div>
     </div>
   </div>
