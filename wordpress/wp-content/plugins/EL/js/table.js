@@ -10,14 +10,16 @@ The function build_table() [in EL.php] is used to
 build the HTML table needed to display the data
 queried by AJAX.  Both must have the same columns.
 
-Parameters:
+Parameters (set by build_table()):
 - table : table name to query
 - columns : columns in table being queried
 - pk : primary key of table
+- filter : (optional) filter for table in format {col: val}
 */
 
 
-function getData(table, columns, pk) {
+function getData(table, columns, pk, filter) {
+
 
     // html for Action button column
     var buttonHTML = '<div class="btn-group" role="group">';
@@ -37,6 +39,7 @@ function getData(table, columns, pk) {
                 "table": table, 
                 "cols": columns,
                 "pk": pk,
+                "filter": filter,
                 },
             },
         "columnDefs": [

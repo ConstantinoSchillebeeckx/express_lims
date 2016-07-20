@@ -115,6 +115,14 @@ function build_table() {
         $table = $db->get_company() . "_" . $_GET['table']; // GET should pass safe name of table
     }
 
+    // build filter
+    $filter = array();
+    if ( isset( $_GET['filter'] ) ) {
+        $filter_raw = explode( ',', $_GET['filter'] );
+        $filter[ $filter_raw[0] ] = $filter_raw[1];
+    }
+
+    // generate table HTML
     if ( isset( $db ) && isset( $table ) && $db->get_table( $table ) ) {
     
         $fields = $db->get_fields($table);
@@ -139,7 +147,8 @@ function build_table() {
             var table = <?php echo json_encode($table); ?>;
             var columns = <?php echo json_encode($fields); ?>;
             var pk = <?php echo json_encode($db->get_pk($table)); ?>;
-            getData(table, columns, pk);
+            var filter = <?php echo json_encode($filter); ?>;
+            getData(table, columns, pk, filter);
         </script>
         <?php
 
@@ -267,8 +276,12 @@ add_action('wp_print_scripts', 'EL_conditional_scripts'); // Add Conditional Pag
 
 
 
-
-
+// Load plugin styles (should be loaded after theme style sheet)
+function EL_styles()
+{
+    wp_enqueue_style('EL_style', plugin_dir_url( __FILE__ ) . '/css/styles.css');
+}
+add_action('wp_enqueue_scripts', 'EL_styles'); // Add plugin stylesheet
 
 
 

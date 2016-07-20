@@ -46,16 +46,23 @@ Return:
 
 */
 function connect_db() {
+
+    mb_internal_encoding('UTF-8');
+
     require_once("config/db.php");
     $conn = new mysqli(DB_HOST_EL, DB_USER_EL, DB_PASS_EL, DB_NAME_EL);
 
-    if (!$conn->connect_errno) {
-        return $conn;
-    } else {
+    if ($conn->connect_errno) {
         err_msg("Could not connect to database!");
         return false;
     }
 
+    if (!$conn->set_charset('utf8')) {
+        err_msg("Error loading character set utf8");
+        return false;
+    }
+
+    return $conn;
 }
 
 
@@ -69,6 +76,10 @@ Parameters:
 ===========
 - sql : sql string
 - conn : MYSQLi connection object (optional)
+         if no connection is passed, one will
+         be created and closed when finished,
+         if a connection is passed, it will be
+         kept open.
 
 Returns:
 ========
@@ -78,21 +89,28 @@ Returns:
 */
 function exec_query($sql, $conn=null) {
 
+    $keep_alive = false;
     if (!$conn) {
         $conn = connect_db();
+    } else {
+        $keep_alive = true;
     }
 
     if ($conn) {
         $res = $conn->query($sql);
         if (!$res) {
             err_msg("Error running query: " . $sql . '; the error was: ' . $conn->error);
-        } else {
-            return $res;
+            $conn->close;
         }
     } else {
         return false;
     }
-    $conn.close();
+
+    if (!$keep_alive && $conn) {
+        $conn->close;
+    }
+
+    return $res;
 }
 
 
@@ -107,6 +125,8 @@ EL.php]
 Function assumes that the following are passed:
 - $_GET['table']
 - $_GET['columns']
+- $_GET['pk']
+- $_GET['filter'] (optional) format assoc array {col name: val}
 
 */
 function get_data_from_db() {
@@ -119,7 +139,6 @@ function get_data_from_db() {
      *            2012 - Kari Söderholm, aka Haprog (updates)
      * License:   GPL v2 or BSD (3-point)
      */
-    mb_internal_encoding('UTF-8');
      
     // DB table to use
     $sTable = $_GET['table'];
@@ -133,27 +152,20 @@ function get_data_from_db() {
     // Indexed column (used for fast and accurate table cardinality)
     $sIndexColumn = $_GET['pk'];
 
+    // user filter (optional)
+    $user_filter = $_GET['filter'];
+
     // Input method (use $_GET, $_POST or $_REQUEST)
     $input =& $_GET;
      
     /**
-     * Character set to use for the MySQL connection.
-     * MySQL will return all strings in this charset to PHP (if the data is stored correctly in the database).
-     */
-    $gaSql['charset']  = 'utf8';
-     
-    /**
      * MySQL connection
      */
-    $db = connect_db();
-    if (mysqli_connect_error()) {
-        die( 'Error connecting to MySQL server (' . mysqli_connect_errno() .') '. mysqli_connect_error() );
-    }
-     
-    if (!$db->set_charset($gaSql['charset'])) {
-        die( 'Error loading character set "'.$gaSql['charset'].'": '.$db->error );
-    }
-      
+    $conn = connect_db();
+
+    // DB class
+    $db = get_db();
+    $table_class = $db->get_table($sTable);
       
     /**
      * Paging
@@ -198,7 +210,7 @@ function get_data_from_db() {
         $aFilteringRules = array();
         for ( $i=0 ; $i<$iColumnCount ; $i++ ) {
             if ( isset($input['bSearchable_'.$i]) && $input['bSearchable_'.$i] == 'true' ) {
-                $aFilteringRules[] = "`".$aColumns[$i]."` LIKE '%".$db->real_escape_string( $input['sSearch'] )."%'";
+                $aFilteringRules[] = "`".$aColumns[$i]."` LIKE '%".$conn->real_escape_string( $input['sSearch'] )."%'";
             }
         }
         if (!empty($aFilteringRules)) {
@@ -209,7 +221,18 @@ function get_data_from_db() {
     // Individual column filtering
     for ( $i=0 ; $i<$iColumnCount ; $i++ ) {
         if ( isset($input['bSearchable_'.$i]) && $input['bSearchable_'.$i] == 'true' && $input['sSearch_'.$i] != '' ) {
-            $aFilteringRules[] = "`".$aColumns[$i]."` LIKE '%".$db->real_escape_string($input['sSearch_'.$i])."%'";
+            $aFilteringRules[] = "`".$aColumns[$i]."` LIKE '%".$conn->real_escape_string($input['sSearch_'.$i])."%'";
+        }
+    }
+
+    // User filter
+    if ( isset( $user_filter ) ) {
+        $filter_val = $conn->real_escape_string( reset( $user_filter ) );
+        $filter_key = $conn->real_escape_string( key ( $user_filter ) );
+        if ( empty( $aFilteringRules ) ) {
+            $aFilteringRules = array( sprintf(" `%s` = '%s' ", $filter_key, $filter_val ) );
+        } else {
+            array_push( $aFilteringRules, sprintf(" `%s` = '%s' ", $filter_key, $filter_val ) );
         }
     }
      
@@ -236,17 +259,16 @@ function get_data_from_db() {
     $sQuery = "
         SELECT SQL_CALC_FOUND_ROWS `" . implode("`, `", $aQueryColumns) . "`
         FROM `".$sTable."`".$sWhere.$sOrder.$sLimit;
-     
-    $rResult = $db->query( $sQuery ) or die($db->error);
+    $rResult = exec_query($sQuery, $conn); 
       
     // Data set length after filtering
     $sQuery = "SELECT FOUND_ROWS()";
-    $rResultFilterTotal = $db->query( $sQuery ) or die($db->error);
+    $rResultFilterTotal = exec_query($sQuery, $conn); 
     list($iFilteredTotal) = $rResultFilterTotal->fetch_row();
      
     // Total data set length
     $sQuery = "SELECT COUNT(`".$sIndexColumn."`) FROM `".$sTable."`";
-    $rResultTotal = $db->query( $sQuery ) or die($db->error);
+    $rResultTotal = exec_query($sQuery, $conn); 
     list($iTotal) = $rResultTotal->fetch_row();
       
       
@@ -259,16 +281,20 @@ function get_data_from_db() {
         "iTotalDisplayRecords" => $iFilteredTotal,
         "aaData"               => array(),
     );
-      
+
+    // fetch results and do any type of formatting      
     while ( $aRow = $rResult->fetch_assoc() ) {
         $row = array();
         for ( $i=0 ; $i<$iColumnCount ; $i++ ) {
-            if ( $aColumns[$i] == 'version' ) {
-                // Special output formatting for 'version' column
-                $row[] = ($aRow[ $aColumns[$i] ]=='0') ? '-' : $aRow[ $aColumns[$i] ];
-            } elseif ( $aColumns[$i] != ' ' ) {
-                // General output
-                $row[] = $aRow[ $aColumns[$i] ];
+        
+            $col_name = $aColumns[$i];
+            $field = $table_class->get_field( $col_name ); // Field class
+    
+            if ( $field->is_pk() ) { // don't format
+                $row[] = $aRow[ $col_name ];
+            } else { // format with filter
+                $url = sprintf("%s&filter=%s,%s", $_SERVER['HTTP_REFERER'], $col_name, $aRow[ $col_name ]);
+                $row[] = '<a href="' . $url . '">' . $aRow[ $col_name ] . '</a>';
             }
         }
         $output['aaData'][] = $row;

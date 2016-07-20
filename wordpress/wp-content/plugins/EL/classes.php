@@ -195,6 +195,15 @@ class Table {
         return $this->struct;
     }
 
+    // given a field name, return the Field class
+    public function get_field($field) {
+        if ( in_array( $field, $this->get_fields() ) ) {
+            return $this->get_struct()[$field];
+        } else {
+            return false;
+        }
+    }
+
     // return field name that is primary key in table
     // returns false if none found
     public function get_pk() {
@@ -307,12 +316,6 @@ class Field {
         echo '</pre>';
     }
 }
-
-
-
-/*------------------------------------*\
-	LIMS functions
-\*------------------------------------*/
 
 
 
