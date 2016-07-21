@@ -107,7 +107,6 @@ name).
 */
 function build_table() {
 
-    include_once("modals.php");
 
     $db = get_db();
 
@@ -126,8 +125,15 @@ function build_table() {
     if ( isset( $db ) && isset( $table ) && $db->get_table( $table ) ) {
     
         $fields = $db->get_fields($table);
-
-        $html = '<table class="table table-bordered table-hover" id="datatable">';
+        
+        // add row button
+        $html = '<div class="row">';
+        $html .= '<div class="col-sm-12">';
+        $html .= '<button class="btn btn-info btn-sm" onclick="addItemModal()">Add item</button>';
+        $html .= '</div>';   
+        $html .= '</div>';   
+ 
+        $html .= '<table class="table table-bordered table-hover" id="datatable">';
         $html .= '<thead>';
         $html .= '<tr class="info">';
 
@@ -156,7 +162,8 @@ function build_table() {
         echo 'Table doesnt exist';
     }
 
-
+    // must be included after table vars are defined
+    include_once("modals.php");
 }
 
 
@@ -210,6 +217,14 @@ function deleteItem_callback() {
     wp_die(); // this is required to terminate immediately and return a proper response
 }
 
+// add item (row) to db
+add_action( 'wp_ajax_addItem', 'addItem_callback' );
+function addItem_callback() {
+
+    echo add_item_to_db(); // defined in server_processing.php
+
+    wp_die(); // this is required to terminate immediately and return a proper response
+}
 
 
 

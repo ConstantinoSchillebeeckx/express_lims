@@ -350,6 +350,23 @@ function delete_item_from_db() {
 }
 
 
+/* Function called by AJAX when user adds item with modal button
+
+Parameters:
+===========
+- $_POST[
+
+*/
+function add_item_to_db() {
+
+    // TODO
+
+    return;
+
+}
+
+
+
 
 
 

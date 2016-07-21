@@ -11,3 +11,5 @@
 - [x] add field type to Field class (e.g. Timestamp, Int, varchar)
 - [x] filtering view by clicking on item
 - [ ] add extra fields to user meta (last login, number of logins, payment status...)
+- [ ] add popover as tooltips to things like add table fields
+- [ ] add IE shim for form validation

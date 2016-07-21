@@ -7,7 +7,8 @@
 
     <!-- article -->
     <article id="search">
-        <p class="lead">Front page!</p>
+        <h1>Express Lims</h1>
+        <p class="lead">Simple, light-weight lab inventory management system</p>
         <?php // content here 
         ?>
 

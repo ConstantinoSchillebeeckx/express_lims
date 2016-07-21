@@ -8,3 +8,11 @@ td a {
     text-decoration: underline;
     color: #337ab7;
 }
+
+body {
+    margin-top: 70px;
+}
+
+.dataTables_wrapper {
+    margin-top: 20px;
+}

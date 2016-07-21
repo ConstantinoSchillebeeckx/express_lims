@@ -55,3 +55,42 @@
     </div>
   </div>
 </div>
+
+
+
+
+
+
+
+
+
+<!-- add row modal -->
+<div class="modal fade" id="addItemModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content panel-info">
+            <div class="modal-header panel-heading">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title"><i class="fa fa-plus" aria-hidden="true"></i> Add item</h4>
+            </div>
+            <form class="form-horizontal" id='addItemForm' onsubmit="addItem()">
+                <div class="modal-body">
+                        <? forEach($fields as $field) {
+                            $field_class = $db->get_field($table, $field);
+                            echo '<div class="form-group">';
+                            echo '<label class="col-sm-2 control-lable">' . $field . ($field_class->is_required() ? '<span class="required">*</span>' : '') . '</label>';
+                            echo '<div class="col-sm-10">';
+                            echo '<input type="text" name="' . $field . '" class="form-control"' . ($field_class->is_required() ? 'required' : '') . '>';
+                            echo '</div>';
+                            echo '</div>';
+                        } ?>
+                    <p><span class="required">*</span> field is required</p>
+                </div>
+                <div class="modal-footer">
+                    <a href="#" class="btn" data-dismiss="modal">Cancel</a>
+                    <button type="submit" class="btn btn-info" id="confirmAddItem">Add item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+

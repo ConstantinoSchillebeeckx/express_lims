@@ -79,7 +79,7 @@ function deleteModal(sel) {
 }
 
 
-/* Function called when use confirms to delete an item
+/* Function called when user confirms to delete an item
 
 Function will make an AJAX call to the server to delete
 the selected item.
@@ -166,6 +166,70 @@ function editModal(sel) {
 }
 
 
+
+
+
+/* Function called when add row button history clicked
+
+Parameters:
+- sel : will be the 'a' selection of the button that was clicked
+
+*/
+function addItemModal(sel) {
+    jQuery('#addItemModal').modal('toggle'); // show modal
+}
+
+
+/* Function handles onclick event from 'Add item' button
+
+When the 'Add item' button is clicked from the modal,
+this function makes an AJAX call to the server to add
+the item to the DB.
+
+*/
+function addItem() {
+    // cancels the form submission
+    event.preventDefault();
+
+    jQuery('#addItemModal').modal('toggle'); // hide modal
+
+    var formData = jQuery('#addItemForm').serialize(); // form data
+    // TODO reformat formData var to be better useable (currently str)
+
+
+    // TODO when should we do error checking (e.g. foreign key, unique)
+    // best place would be before AJAX call, within the modal ...
+
+    return;
+
+    var data = {
+            "action": "addItem", 
+            "id": id, 
+            "table": table, // var set by build_table() in EL.php
+            "pk": pk, // var set by build_table() in EL.php
+    }
+    
+    // send via AJAX to process with PHP
+    jQuery.ajax({
+            url: ajax_object.ajax_url, 
+            type: "GET",
+            data: data, 
+            dataType: 'json',
+            success: function(response) {
+                jQuery('#datatable').DataTable().draw('page');
+                showMsg(response);
+            },
+            error: function(xhr, status, error) {
+                console.log(xhr.responseText);
+                showMsg({"msg":"There ws an error, please try again.", "status": false});
+            }
+    });
+
+}
+
+
+
+
 /* Function called when use confirms to delete an item
 
 Function will make an AJAX call to the server to delete
@@ -187,7 +251,12 @@ jQuery(document).ready(function($) {
     jQuery('#historyModal').modal({ show: false })
     jQuery('#editModal').modal({ show: false})
     jQuery('#deleteModal').modal({ show: false})
+    jQuery('#addItemModal').modal({ show: false})
 })
+
+
+
+
 
 
 

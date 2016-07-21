@@ -104,6 +104,16 @@ class Database {
         }
     }
 
+    // given a table (name) and field return its Field class
+    public function get_field($table, $field) {
+        if ( in_array( $table, $this->get_tables() ) ) {
+            $table_class = $this->get_struct()[$table];
+            return $table_class->get_field($field);
+        } else {
+            return false;
+        }
+    }
+
     // given a table (name) return its full name (with prepended DB)
     public function get_table_full_name($table) {
         if ( in_array( $table, $this->get_tables() ) ) {
@@ -239,7 +249,7 @@ Class properties:
 - is_ref : bool if field is referenced by a foreign key (this makes the field a primary key)
 - ref : if field is referenced by a foreign key, this is the field that references it (full_name)
 - type : field type (e.g. datetime, varchar, etc)
-- null : bool if field can be NULL
+- required : bool if field is required (inverst of NULL property)
 - key: can be empty, PRI, UNI or MUL (see https://dev.mysql.com/doc/refman/5.7/en/show-columns.html)
 - default : default value of field
 - extra : any additional information that is available about a given column
@@ -252,7 +262,7 @@ class Field {
     protected $is_ref; // if field is referenced by a foreign key
     protected $ref; // if field is referenced by a foreign key, this is the field that references it (full name)
     protected $type;
-    protected $null;
+    protected $required;
     protected $key;
     protected $default;
     protected $extra;
@@ -261,7 +271,7 @@ class Field {
     public function __construct($name, $fks, $info) {
         $this->name = $name;
         $this->type = $info[$name]["Type"];
-        $this->null = $info[$name]["Null"] == "YES" ? true : false;
+        $this->required = $info[$name]["Null"] == "YES" ? false : true;
         $this->key = $info[$name]["Key"];
         $this->default = $info[$name]["Default"];
         $this->extra = $info[$name]["Extra"];
@@ -307,6 +317,11 @@ class Field {
     // return true if field is a primary key
     public function is_pk() {
         return $this->key == 'PRI' ? true : false;
+    }
+
+    // return true if field is required
+    public function is_required() {
+        return $this->required;
     }
 
     // pretty print
