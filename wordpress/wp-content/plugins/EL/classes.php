@@ -319,6 +319,11 @@ class Field {
         return $this->key == 'PRI' ? true : false;
     }
 
+    // return field type
+    public function get_type() {
+        return $this->type;
+    }
+
     // return true if field is required
     public function is_required() {
         return $this->required;

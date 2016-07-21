@@ -188,26 +188,26 @@ the item to the DB.
 
 */
 function addItem() {
-    // cancels the form submission
-    event.preventDefault();
+
+    event.preventDefault(); // cancel form submission
+
+    // TODO check for uniquness constraint before hiding modal
 
     jQuery('#addItemModal').modal('toggle'); // hide modal
 
-    var formData = jQuery('#addItemForm').serialize(); // form data
-    // TODO reformat formData var to be better useable (currently str)
 
-
-    // TODO when should we do error checking (e.g. foreign key, unique)
-    // best place would be before AJAX call, within the modal ...
 
     return;
 
     var data = {
             "action": "addItem", 
-            "id": id, 
             "table": table, // var set by build_table() in EL.php
             "pk": pk, // var set by build_table() in EL.php
     }
+    var formData = jQuery('#addItemForm').serialize(); // form data
+    jQuery(formdata).each(function(index, obj) {
+        data[obj.name] = obj.value;
+    });
     
     // send via AJAX to process with PHP
     jQuery.ajax({
@@ -262,10 +262,13 @@ jQuery(document).ready(function($) {
 
 /* Catch AJAX response and show message if needed
 
+Will generate a dismissable alert div at the top 
+of the page which will hide after 3 seconds
+
 Parameters:
 ===========
 - dat : object
-        -> msg : msg to display)
+        -> msg : msg to display
         -> status : bool - true if success msg, false if error msg
 
 */

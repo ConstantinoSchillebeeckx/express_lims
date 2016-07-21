@@ -29,7 +29,7 @@
       </div>
       <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-        <button type="button" class="btn btn-primary" id="confirmEdit">Save changes</button>
+        <button type="button" class="btn btn-warning" id="confirmEdit">Save changes</button>
       </div>
     </div>
   </div>
@@ -75,26 +75,29 @@
             <form class="form-horizontal" id='addItemForm' onsubmit="addItem()">
                 <div class="modal-body">
                         <? forEach($fields as $field) {
-                            $field_class = $db->get_field($table, $field);
-                            echo '<div class="form-group">';
-                            echo '<label class="col-sm-2 control-lable">' . $field . ($field_class->is_required() ? '<span class="required">*</span>' : '') . '</label>';
-                            echo '<div class="col-sm-10">';
-                            if ( $field_class->is_fk() ) {  // if field is an fk, show a select dropdown with available values
-                                $fks = $field_class->get_fks();
-                                $ref_id = $field_class->get_fk_field();
-                                echo '<select class="form-control">';
-                                while ($row = $fks->fetch_assoc()) {
-                                    $val = $row[$ref_id];
-                                    echo sprintf("<option value='%s'>%s</option>", $val, $val);
-                                }
-                                echo '</select>';
+                            $field_class = $db->get_field($table, $field); ?>
+                            <div class="form-group">
+                            <?php if ($field_class->is_required()) {
+                                echo '<label class="col-sm-2 control-label">' . $field . '<span class="required">*</span></label>';
                             } else {
-                                echo '<input type="text" name="' . $field . '" class="form-control"' . ($field_class->is_required() ? 'required' : '') . '>';
-                            }
-                            echo '</div>';
-                            echo '</div>';
-                        } ?>
-                    <p><span class="required">*</span> field is required</p>
+                                echo '<label class="col-sm-2 control-label">' . $field . '</label>';
+                            } ?>
+                            <div class="col-sm-10">
+                            <?php if ( $field_class->is_fk() ) {  // if field is an fk, show a select dropdown with available values
+                                    get_fks_as_select($field_class);
+                            } else {
+                                if ( in_array( $field_class->get_type(), array('timestamp', 'date') ) ) {
+                                    echo '<input type="text" name="' . $field . '" class="form-control" disabled><span class="text-muted">This field has been disabled since this field type populates automatically.</span>'; // automatically filled
+                                } elseif ($field_class->is_required()) {
+                                    echo '<input type="text" name="' . $field . '" class="form-control" required>';
+                                } else {
+                                    echo '<input type="text" name="' . $field . '" class="form-control">';
+                                }
+                            } ?>
+                            </div>
+                            </div>
+                        <?php } ?>
+                    <p class="text-right"><span class="required">*</span> field is required</p>
                 </div>
                 <div class="modal-footer">
                     <a href="#" class="btn" data-dismiss="modal">Cancel</a>
@@ -104,4 +107,5 @@
         </div>
     </div>
 </div>
+
 

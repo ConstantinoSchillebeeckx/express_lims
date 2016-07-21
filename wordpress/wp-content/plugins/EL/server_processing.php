@@ -401,6 +401,39 @@ function err_msg($msg, $debug=DEBUG) {
 
 
 
+/* Generates a dropbown with available values for a foreign key
+
+A foreign key field must take on a value from the table and
+column that it references.  This function will generate the
+HTML for a select dropdown that is filled with those
+available column values.
+
+Parameters:
+===========
+- $field_class : Field class
+                 the field (assumed to be an FK) for which to find
+                 the available column values for
+
+Returns:
+========
+- HTML for a select dropdown if the field is an FK; if field is not
+  an FK or if the reference table/column doesn't exist, nothing
+  is returned.
+
+*/
+function get_fks_as_select($field_class) {
+        $fks = $field_class->get_fks(); // get the available values
+        $ref_id = $field_class->get_fk_field(); // get the field the FK references
+
+        if ( isset($fks) && isset($ref_id) ) {
+            echo '<select class="form-control">';
+            while ($row = $fks->fetch_assoc()) {
+                $val = $row[$ref_id];
+                echo sprintf("<option value='%s'>%s</option>", $val, $val);
+            }
+            echo '</select>';
+        }
+}
 
 
 

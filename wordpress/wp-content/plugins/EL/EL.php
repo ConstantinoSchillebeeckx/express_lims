@@ -114,7 +114,7 @@ function build_table() {
         $table = $db->get_company() . "_" . $_GET['table']; // GET should pass safe name of table
     }
 
-    // build filter
+    // build filter for use with AJAX
     $filter = array();
     if ( isset( $_GET['filter'] ) ) {
         $filter_raw = explode( ',', $_GET['filter'] );
@@ -128,27 +128,23 @@ function build_table() {
         
         <div class="row">
             <div class="col-sm-12">
-                <button class="btn btn-info btn-xs" onclick="addItemModal()">Insert new item</button>
-                <button class="btn btn-info btn-xs" onclick="">Add field</button>
-                <button class="btn btn-danger btn-xs" onclick="">Delete table</button>
+                <button class="btn btn-info btn-xs" onclick="addItemModal()">New item</button>
             </div>   
         </div>   
 
-        <?php $html .= '<table class="table table-bordered table-hover" id="datatable">';
-        $html .= '<thead>';
-        $html .= '<tr class="info">';
+        <table class="table table-bordered table-hover" id="datatable">
+        <thead>
+        <tr class="info">
 
-        foreach ( $fields as $field ) {
-            $html .= sprintf('<th>%s</th>', $field); 
-        }
+        <?php foreach ( $fields as $field ) {
+            echo sprintf('<th>%s</th>', $field); 
+        } ?>
 
-        $html .= '<th>Action</th>';
-        $html .= '</tr>';
-        $html .= '</thead>';
-        $html .= '</table>';
+        <th>Action</th>
+        </tr>
+        </thead>
+        </table>
 
-        echo $html;
-        ?>
         <script type="text/javascript">
             // This will do the AJAX call, func defined in js/table.js
             var table = <?php echo json_encode($table); ?>;
@@ -157,9 +153,8 @@ function build_table() {
             var filter = <?php echo json_encode($filter); ?>;
             getData(table, columns, pk, filter);
         </script>
-        <?php
 
-    } else {
+    <?php } else {
         echo 'Table doesnt exist';
     }
 
