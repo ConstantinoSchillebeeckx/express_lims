@@ -180,7 +180,7 @@ function addItemModal(sel) {
 }
 
 
-/* Function handles onclick event from 'Add item' button
+/* Function handles form submission from add item modal
 
 When the 'Add item' button is clicked from the modal,
 this function makes an AJAX call to the server to add

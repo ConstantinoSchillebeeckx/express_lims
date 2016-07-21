@@ -42,8 +42,8 @@ class Database {
             }
 
             // check FKs for table
-            $sql = sprintf("select concat(table_schema, '.', table_name, '.', column_name) as 'foreign key',  
-            concat(referenced_table_schema, '.', referenced_table_name, '.', referenced_column_name) as 'references'
+            $sql = sprintf("select concat(table_name, '.', column_name) as 'foreign key',  
+            concat(referenced_table_name, '.', referenced_column_name) as 'references'
             from
                 information_schema.key_column_usage
             where
@@ -175,7 +175,7 @@ class Table {
 
         // get details of each field
         foreach ($this->fields as $field) {
-            $this->struct[$field] = new Field($field, $fks, $info);
+            $this->struct[$field] = new Field($this->name, $field, $fks, $info);
         }
      }
 
@@ -226,7 +226,7 @@ class Table {
         return false;
     }
 
-    // return databse table belongs to
+    // return database table belongs to
     public function get_db() {
         return Database::get_name();
     }
@@ -268,7 +268,7 @@ class Field {
     protected $extra;
     protected $name;
 
-    public function __construct($name, $fks, $info) {
+    public function __construct($table, $name, $fks, $info) {
         $this->name = $name;
         $this->type = $info[$name]["Type"];
         $this->required = $info[$name]["Null"] == "YES" ? false : true;
@@ -277,16 +277,16 @@ class Field {
         $this->extra = $info[$name]["Extra"];
 
         // check if field is fk
-        if (array_key_exists($this->name, $fks)) {
+        if (array_key_exists($table . '.' . $this->name, $fks)) {
             $this->is_fk = true;
-            $this->fk_ref = $fks[$this->name];
+            $this->fk_ref = $fks[$table . '.' . $this->name];
         } else {
             $this->is_fk = false;
             $this->fk_ref = false;
         }
 
         // check if field is referenced by fk
-        $tmp = array_search($this->name, $fks);
+        $tmp = array_search($table . '.' . $this->name, $fks);
         if ($tmp) {
             $this->is_ref = true;
             $this->ref = $tmp;
@@ -322,6 +322,32 @@ class Field {
     // return true if field is required
     public function is_required() {
         return $this->required;
+    }
+
+    // return true if field is a foreign key
+    public function is_fk() {
+        return $this->is_fk;
+    }
+
+    // if a field is an fk, this will return
+    // the which field it references
+    public function get_fk_field() {
+        $ref = explode('.',$this->fk_ref);
+        return $ref[1];
+    }
+
+    // will return a list of possible values a
+    // field can take assuming it is an fk
+    public function get_fks() {
+        if ($this->is_fk) {
+            $ref = explode('.',$this->fk_ref);
+            $ref_table = $ref[0];
+            $ref_field = $ref[1];
+            $sql = sprintf( "SELECT DISTINCT(%s) from %s.%s ORDER BY %s", $ref_field, DB_NAME_EL, $ref_table, $ref_field );
+            return exec_query($sql);
+        } else {
+            return false;
+        }
     }
 
     // pretty print

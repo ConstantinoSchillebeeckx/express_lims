@@ -79,7 +79,18 @@
                             echo '<div class="form-group">';
                             echo '<label class="col-sm-2 control-lable">' . $field . ($field_class->is_required() ? '<span class="required">*</span>' : '') . '</label>';
                             echo '<div class="col-sm-10">';
-                            echo '<input type="text" name="' . $field . '" class="form-control"' . ($field_class->is_required() ? 'required' : '') . '>';
+                            if ( $field_class->is_fk() ) {  // if field is an fk, show a select dropdown with available values
+                                $fks = $field_class->get_fks();
+                                $ref_id = $field_class->get_fk_field();
+                                echo '<select class="form-control">';
+                                while ($row = $fks->fetch_assoc()) {
+                                    $val = $row[$ref_id];
+                                    echo sprintf("<option value='%s'>%s</option>", $val, $val);
+                                }
+                                echo '</select>';
+                            } else {
+                                echo '<input type="text" name="' . $field . '" class="form-control"' . ($field_class->is_required() ? 'required' : '') . '>';
+                            }
                             echo '</div>';
                             echo '</div>';
                         } ?>

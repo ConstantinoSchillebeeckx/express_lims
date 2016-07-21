@@ -85,6 +85,7 @@ Returns:
 ========
 - false if no connection could be made to DB,
   otherwise returns the results of the query
+  as a mysqli_result class
 
 */
 function exec_query($sql, $conn=null) {
@@ -110,7 +111,11 @@ function exec_query($sql, $conn=null) {
         $conn->close;
     }
 
-    return $res;
+    if ($res->num_rows > 0) {
+        return $res;
+    } else {
+        return false;
+    }
 }
 
 

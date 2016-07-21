@@ -124,16 +124,17 @@ function build_table() {
     // generate table HTML
     if ( isset( $db ) && isset( $table ) && $db->get_table( $table ) ) {
     
-        $fields = $db->get_fields($table);
+        $fields = $db->get_fields($table); ?>
         
-        // add row button
-        $html = '<div class="row">';
-        $html .= '<div class="col-sm-12">';
-        $html .= '<button class="btn btn-info btn-sm" onclick="addItemModal()">Add item</button>';
-        $html .= '</div>';   
-        $html .= '</div>';   
- 
-        $html .= '<table class="table table-bordered table-hover" id="datatable">';
+        <div class="row">
+            <div class="col-sm-12">
+                <button class="btn btn-info btn-xs" onclick="addItemModal()">Insert new item</button>
+                <button class="btn btn-info btn-xs" onclick="">Add field</button>
+                <button class="btn btn-danger btn-xs" onclick="">Delete table</button>
+            </div>   
+        </div>   
+
+        <?php $html .= '<table class="table table-bordered table-hover" id="datatable">';
         $html .= '<thead>';
         $html .= '<tr class="info">';
 
