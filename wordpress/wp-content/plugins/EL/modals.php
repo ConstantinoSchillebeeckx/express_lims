@@ -67,7 +67,7 @@
 
 
 
-<!-- add row modal -->
+<!-- add item modal -->
 <div class="modal fade" id="addItemModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
     <div class="modal-dialog" role="document">
         <div class="modal-content panel-info">

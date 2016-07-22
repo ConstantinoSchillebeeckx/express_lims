@@ -109,6 +109,17 @@ function build_table() {
 
     if ( isset( $_GET['table'] ) ) {
         $table = $db->get_company() . "_" . $_GET['table']; // GET should pass safe name of table
+        $table_class = $db->get_table($table);
+        $unique_fields = $table_class->get_unique();
+        // if some fields are unique, get the possible values in case user wants to edit that item
+        $uniques = array();
+        if ( $unique_fields ) {
+            foreach ($unique_fields as $field) {
+                $field_class = $table_class->get_field($field);
+                $uniques[$field] = $field_class->get_unique_vals();
+            } 
+        }
+        var_dump($uniques);
     }
 
     // build filter for use with AJAX
@@ -119,7 +130,7 @@ function build_table() {
     }
 
     // generate table HTML
-    if ( isset( $db ) && isset( $table ) && $db->get_table( $table ) ) {
+    if ( isset( $db ) && isset( $table ) && $isset( $table_class ) ) {
     
         $fields = $db->get_fields($table); ?>
         

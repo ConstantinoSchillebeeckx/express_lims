@@ -104,6 +104,22 @@ class Database {
         }
     }
 
+    // given a table (name) return the columns that are unique,
+    // if any, as an array
+    public function get_unique($table) {
+        if ( in_array( $table, $this->get_tables() ) ) {
+            $tmp = $this->get_struct()[$table];
+            if ($tmp->get_unique()) {
+                return $tmp->get_unique();
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+
     // given a table (name) and field return its Field class
     public function get_field($table, $field) {
         if ( in_array( $table, $this->get_tables() ) ) {
@@ -226,6 +242,24 @@ class Table {
         return false;
     }
 
+    // return an array of fields that have
+    // the unique property in the table
+    // otherwise false
+    public function get_unique() {
+        $info = $this->get_struct();
+        $tmp = array();
+        foreach ($info as $k => $v) { // $k = field name, $v Field class
+            if ( $v->is_unique() ) {
+                array_push($tmp, $k);
+            }
+        }
+        if ( count($tmp) > 0 ) {
+            return $tmp;
+        } else {
+            return false;
+        }
+    }
+
     // return database table belongs to
     public function get_db() {
         return Database::get_name();
@@ -327,6 +361,27 @@ class Field {
     // return true if field is required
     public function is_required() {
         return $this->required;
+    }
+
+    // return true if field is unique (PRI or UNI key)
+    public function is_unique() {
+        return in_array($this->key, array('PRI','UNI'));
+    }
+
+    // if a field is unique, return the current values
+    // of the field, otherwise false
+    public function get_unique_vals() {
+        if ( $this->is_unique() ) {
+            $sql = sprintf("SELECT DISTINCT(%s) FROM %s.%s", $this->get_name(), DB_NAME_EL, Table::get_name());
+            $result = exec_query($sql);
+            $vals = array();
+            while ($row = $result->fetch_assoc()) {
+                $vals[] = $row[$this->name];
+            }
+            return false;
+        } else {
+            return false;
+        }
     }
 
     // return true if field is a foreign key

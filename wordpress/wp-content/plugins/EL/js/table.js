@@ -163,26 +163,56 @@ function editModal(sel) {
     var rowIX = tr.index()
     var cellVal = tr.find('td:first').text();
 
-    // get values from row to fill modal
-    var th = jQuery('#datatable th');
-    jQuery('table tbody tr').each(function(i, tr){
-        if (i == rowIX) {
-            tds = jQuery(tr).find('td');
-            th.each(function(index, th){
-                var cell = tds.eq(index).text();
-                var col = jQuery(th).text();
-                if (cell != '') {
-                    jQuery('#' + col).val(cell);
-                }
-            });
-        }
-    });
+    // get values from row and fill modal
+    var dat = parseTable(rowIX)[0];
+    for (var col in dat) {
+        var cell = dat[col];
+        jQuery('#' + col).val(cell);
+    }
 
 
     jQuery("#editID").html( "<code>" + cellVal + "</code>" ); // set PK message
     jQuery('#editModal').modal('toggle'); // show modal
 
     jQuery("#confirmEdit").attr("onclick", "editItem('" + cellVal + "')");
+}
+
+
+/* parse table into array object
+
+Instead of querying the DB again, we parse the viewed
+datatable in cases when the edit modal needs to be
+filled in or any unique fields need to be checked
+
+Format : [{colname: value}, {colname: value}]
+
+Paramters:
+==========
+- rowIX : int
+          represents index (0-based) for row requested,
+          otherwise returns all rows
+
+*/
+function parseTable(rowIX=null) {
+
+    var th = jQuery('#datatable th');
+    var dat = [];
+    jQuery('table tbody tr').each(function(i, tr){
+        if (rowIX == null || i == rowIX) {
+            var obj = {}
+            tds = jQuery(tr).find('td');
+            th.each(function(index, th){
+                var cell = tds.eq(index).text();
+                var col = jQuery(th).text();
+                if (cell != '') {
+                    obj[col] = cell;
+                }
+            });
+            dat.push(obj)
+        }
+    });
+    return dat;
+
 }
 
 
@@ -212,6 +242,7 @@ function addItem() {
     event.preventDefault(); // cancel form submission
 
     // TODO check for uniquness constraint before hiding modal
+    alert("fruit: " + table); 
 
     jQuery('#addItemModal').modal('toggle'); // hide modal
 
@@ -262,6 +293,9 @@ Parameters:
 */
 function editItem(id) {
     console.log("edit",id);
+
+    // TODO uniqueness check
+
     jQuery('#editModal').modal('toggle'); // hide modal
 }
 
