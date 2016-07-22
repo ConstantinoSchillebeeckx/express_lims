@@ -20,9 +20,6 @@ include_once("server_processing.php");
 
 
 
-
-
-
 /*------------------------------------*\
 	    Wordpress side functions
 \*------------------------------------*/
@@ -221,6 +218,114 @@ function addItem_callback() {
 
     wp_die(); // this is required to terminate immediately and return a proper response
 }
+
+
+
+
+/* Generates a dropbown with available values for a foreign key
+
+A foreign key field must take on a value from the table and
+column that it references.  This function will generate the
+HTML for a select dropdown that is filled with those
+available column values.
+
+Parameters:
+===========
+- $field_class : Field class
+                 the field (assumed to be an FK) for which to find
+                 the available column values for
+
+Returns:
+========
+- HTML for a select dropdown if the field is an FK; if field is not
+  an FK or if the reference table/column doesn't exist, nothing
+  is returned.
+
+*/
+function get_fks_as_select($field_class) {
+        $fks = $field_class->get_fks(); // get the available values
+        $name = $field_class->get_name();
+        $ref_id = $field_class->get_fk_field(); // get the field the FK references
+
+        if ( isset($fks) && isset($ref_id) ) {
+            echo '<select class="form-control" id="' . $name . '">';
+            while ($row = $fks->fetch_assoc()) {
+                $val = $row[$ref_id];
+                echo sprintf("<option value='%s'>%s</option>", $val, $val);
+            }
+            echo '</select>';
+        }
+}
+
+
+
+/* Build a form of inputs based on a table row
+
+When either adding a new item or editing a table row item,
+a modal appears that should be filled with inputs for each
+table field.  This function will generate a form that has
+proper inputs for each of these fields.  If the field is
+an FK, a select will be generated, otherwise an input
+box is shown.  For any field that is automatically populated
+(e.g. timestamp), the input will be disabled and a note will
+be displayed.
+
+Parameters:
+===========
+- $table : str
+           table name for which to generate input fields
+
+
+Return:
+=======
+- will generate (echo) all the proper HTML which should
+  be placed within a form
+
+*/
+function get_form_table_row($table) {
+
+    $db = get_db();
+    $table_class = $db->get_table($table);
+    $fields = $table_class->get_fields();
+
+    forEach($fields as $field) {
+
+        $field_class = $db->get_field($table, $field); ?>
+
+        <div class="form-group">
+
+        <?php if ($field_class->is_required()) {
+            echo '<label class="col-sm-2 control-label">' . $field . '<span class="required">*</span></label>';
+        } else {
+            echo '<label class="col-sm-2 control-label">' . $field . '</label>';
+        } ?>
+
+        <div class="col-sm-10">
+
+        <?php if ( $field_class->is_fk() ) {  // if field is an fk, show a select dropdown with available values
+            get_fks_as_select($field_class);
+        } else {
+            if ( in_array( $field_class->get_type(), array('timestamp', 'date') ) ) {
+                echo '<input type="text" id="' . $field . '" name="' . $field . '" class="form-control" disabled><span class="text-muted">This field has been disabled since this field type populates automatically.</span>'; // automatically filled
+            } elseif ($field_class->is_required()) {
+                echo '<input type="text" id="' . $field . '" name="' . $field . '" class="form-control" required>';
+            } else {
+                echo '<input type="text" id="' . $field . '" name="' . $field . '" class="form-control">';
+            }
+        } ?>
+
+        </div>
+        </div>
+    <?php } ?>
+
+    <p class="text-right"><span class="required">*</span> field is required</p>
+<?php }
+
+
+
+
+
+
 
 
 

@@ -159,10 +159,30 @@ Parameters:
 function editModal(sel) {
 
     // find first col value (PK) of row from button press
-    var val = jQuery(sel).parents("tr").find(">:first-child").html()
-    jQuery("#editID").html( "<code>" + val + "</code>" ); // set PK message
+    var tr = jQuery(sel).parents("tr");
+    var rowIX = tr.index()
+    var cellVal = tr.find('td:first').text();
+
+    // get values from row to fill modal
+    var th = jQuery('#datatable th');
+    jQuery('table tbody tr').each(function(i, tr){
+        if (i == rowIX) {
+            tds = jQuery(tr).find('td');
+            th.each(function(index, th){
+                var cell = tds.eq(index).text();
+                var col = jQuery(th).text();
+                if (cell != '') {
+                    jQuery('#' + col).val(cell);
+                }
+            });
+        }
+    });
+
+
+    jQuery("#editID").html( "<code>" + cellVal + "</code>" ); // set PK message
     jQuery('#editModal').modal('toggle'); // show modal
-    jQuery("#confirmEdit").attr("onclick", "editItem('" + val + "')");
+
+    jQuery("#confirmEdit").attr("onclick", "editItem('" + cellVal + "')");
 }
 
 
