@@ -110,17 +110,8 @@ function build_table() {
     if ( isset( $_GET['table'] ) ) {
         $table = $db->get_company() . "_" . $_GET['table']; // GET should pass safe name of table
         $table_class = $db->get_table($table);
-        $unique_fields = $table_class->get_unique();
-        // if some fields are unique, get the possible values in case user wants to edit that item
-        $uniques = array();
-        if ( $unique_fields ) {
-            foreach ($unique_fields as $field) {
-                $field_class = $table_class->get_field($field);
-                $uniques[$field] = $field_class->get_unique_vals();
-            } 
-        }
-        var_dump($uniques);
     }
+
 
     // build filter for use with AJAX
     $filter = array();
@@ -130,7 +121,7 @@ function build_table() {
     }
 
     // generate table HTML
-    if ( isset( $db ) && isset( $table ) && $isset( $table_class ) ) {
+    if ( isset( $db ) && isset( $table ) && $table_class != null ) {
     
         $fields = $db->get_fields($table); ?>
         
@@ -230,6 +221,14 @@ function addItem_callback() {
     wp_die(); // this is required to terminate immediately and return a proper response
 }
 
+// edit item (row) to db
+add_action( 'wp_ajax_edutItem', 'editItem_callback' );
+function editItem_callback() {
+
+    echo edit_item_to_db(); // defined in server_processing.php
+
+    wp_die(); // this is required to terminate immediately and return a proper response
+}
 
 
 
@@ -259,7 +258,7 @@ function get_fks_as_select($field_class) {
         $ref_id = $field_class->get_fk_field(); // get the field the FK references
 
         if ( isset($fks) && isset($ref_id) ) {
-            echo '<select class="form-control" id="' . $name . '">';
+            echo '<select class="form-control" id="' . $name . '" name="' . $name . '">';
             while ($row = $fks->fetch_assoc()) {
                 $val = $row[$ref_id];
                 echo sprintf("<option value='%s'>%s</option>", $val, $val);
@@ -305,27 +304,27 @@ function get_form_table_row($table) {
 
         <div class="form-group">
 
-        <?php if ($field_class->is_required()) {
-            echo '<label class="col-sm-2 control-label">' . $field . '<span class="required">*</span></label>';
-        } else {
-            echo '<label class="col-sm-2 control-label">' . $field . '</label>';
-        } ?>
-
-        <div class="col-sm-10">
-
-        <?php if ( $field_class->is_fk() ) {  // if field is an fk, show a select dropdown with available values
-            get_fks_as_select($field_class);
-        } else {
-            if ( in_array( $field_class->get_type(), array('timestamp', 'date') ) ) {
-                echo '<input type="text" id="' . $field . '" name="' . $field . '" class="form-control" disabled><span class="text-muted">This field has been disabled since this field type populates automatically.</span>'; // automatically filled
-            } elseif ($field_class->is_required()) {
-                echo '<input type="text" id="' . $field . '" name="' . $field . '" class="form-control" required>';
+            <?php if ($field_class->is_required()) {
+                echo '<label class="col-sm-2 control-label">' . $field . '<span class="required">*</span></label>';
             } else {
-                echo '<input type="text" id="' . $field . '" name="' . $field . '" class="form-control">';
-            }
-        } ?>
+                echo '<label class="col-sm-2 control-label">' . $field . '</label>';
+            } ?>
 
-        </div>
+            <div class="col-sm-10">
+
+            <?php if ( $field_class->is_fk() ) {  // if field is an fk, show a select dropdown with available values
+                get_fks_as_select($field_class);
+            } else {
+                if ( in_array( $field_class->get_type(), array('timestamp', 'date') ) ) {
+                    echo '<input type="text" id="' . $field . '" name="' . $field . '" class="form-control" disabled><span class="text-muted">This field has been disabled since this field type populates automatically.</span>'; // automatically filled
+                } elseif ($field_class->is_required()) {
+                    echo '<input type="text" id="' . $field . '" name="' . $field . '" class="form-control" required>';
+                } else {
+                    echo '<input type="text" id="' . $field . '" name="' . $field . '" class="form-control">';
+                }
+            } ?>
+
+            </div>
         </div>
     <?php } ?>
 

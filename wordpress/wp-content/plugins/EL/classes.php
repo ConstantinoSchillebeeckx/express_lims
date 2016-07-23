@@ -15,7 +15,6 @@ Class properties:
 - struct : associative array where each table is a key and
            the value is a class Table
 - name : name of database e.g. db215537_EL
-- db : same as name but defined as static
 - company : company associated with logged in user
 
 TODO
@@ -163,14 +162,15 @@ Class roperties:
 - struct : associative array where each field is a key and
            the value is a class Field
 - name : name of table with prepended company (e.g. matatu_samples)
-- table : same as name but as a static type
 - fields : array of fields contained in table
 
 */
 class Table {
 
-    protected $fields = array(); // list of fields in table
-    protected $name = null; // table name
+    protected $fields = array();
+    protected $name = null;
+    protected $struct = array();
+    
 
     public function __construct($name, $fks) {
         $this->name = $name;
@@ -207,7 +207,7 @@ class Table {
 
     // return full name (with DB prepended)
     public function get_full_name() {
-        return $this->get_db() . '.' . $this->get_name();
+        return DB_NAME_EL . '.' . $this->get_name();
     }
 
     // return array of fields in table
@@ -260,10 +260,6 @@ class Table {
         }
     }
 
-    // return database table belongs to
-    public function get_db() {
-        return Database::get_name();
-    }
 
     // pretty print
     public function show() {
@@ -287,20 +283,22 @@ Class properties:
 - key: can be empty, PRI, UNI or MUL (see https://dev.mysql.com/doc/refman/5.7/en/show-columns.html)
 - default : default value of field
 - extra : any additional information that is available about a given column
+- table : name of table field belongs
 */
 class Field {
 
-    protected $is_fk; // if field is a foreign key
-    protected $fk_ref; // if field is a foreign key, it references this field (full name)
-    protected $hidden; // if field should be hidden from front end view
-    protected $is_ref; // if field is referenced by a foreign key
-    protected $ref; // if field is referenced by a foreign key, this is the field that references it (full name)
+    protected $is_fk; 
+    protected $fk_ref;
+    protected $hidden; 
+    protected $is_ref;
+    protected $ref; 
     protected $type;
     protected $required;
     protected $key;
     protected $default;
     protected $extra;
     protected $name;
+    protected $table;
 
     public function __construct($table, $name, $fks, $info) {
         $this->name = $name;
@@ -309,6 +307,7 @@ class Field {
         $this->key = $info[$name]["Key"];
         $this->default = $info[$name]["Default"];
         $this->extra = $info[$name]["Extra"];
+        $this->table = $table;
 
         // check if field is fk
         if (array_key_exists($table . '.' . $this->name, $fks)) {
@@ -345,8 +344,13 @@ class Field {
 
     // return full name of field (db123.matatu_samples.sample)
     public function get_full_name() {
-        return Table::get_full_name() . '.' . $this->get_name();
+        return DB_NAME_EL . '.' . $this->get_table() . '.' . $this->get_name();
     }    
+
+    // return name of table this field belongs to
+    public function get_table() {
+        return $this->table;
+    }
 
     // return true if field is a primary key
     public function is_pk() {
@@ -372,13 +376,17 @@ class Field {
     // of the field, otherwise false
     public function get_unique_vals() {
         if ( $this->is_unique() ) {
-            $sql = sprintf("SELECT DISTINCT(%s) FROM %s.%s", $this->get_name(), DB_NAME_EL, Table::get_name());
+            $sql = sprintf("SELECT DISTINCT(%s) FROM %s.%s", $this->get_name(), DB_NAME_EL, $this->get_table());
             $result = exec_query($sql);
             $vals = array();
             while ($row = $result->fetch_assoc()) {
                 $vals[] = $row[$this->name];
             }
-            return false;
+            if ( count($vals) > 0 ) {
+                return $vals;
+            } else {
+                return false;
+            }
         } else {
             return false;
         }

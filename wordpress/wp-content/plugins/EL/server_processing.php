@@ -322,9 +322,9 @@ update history.  AJAX call made by deleteItem() in
 js/table.js
 
 Parameters:
-- $_POST['id'] : name of the item being deleted
-- $_POST['table'] : name of table in which item is located
-- $_POST['pk'] : column in which item exists
+- $_GET['id'] : name of the item being deleted
+- $_GET['table'] : name of table in which item is located
+- $_GET['pk'] : column in which item exists
 
 
 */
@@ -359,15 +359,94 @@ function delete_item_from_db() {
 
 Parameters:
 ===========
-- $_POST[
+- $_GET['table']
+- $_GET['pk']
+- $_GET['dat'] : obj of form data (key: col name, val: value)
 
 */
 function add_item_to_db() {
+
+    $table = $_GET['table'];
+    $dat = $_GET['dat'];
+
+    // ERROR CHECK ITEM
+    if ( isset( $table ) && isset( $dat ) ) {
+        $msg = validate_item_in_table($table, $dat);
+
+        if ($msg === true) {
+            return json_encode(array("msg" => "Item successfully added to LIMS", "status" => true));
+        } else { // error
+            return json_encode(array("msg" => $msg, "status" => false));
+        }
+    } else {
+        return json_encode(array("msg" => 'There ws an error, please try again.', "status" => false));
+    }
+
+}
+
+
+/* Function called by AJAX when user edits item in modal button
+
+Parameters:
+===========
+- $_POST[
+
+*/
+function edit_item_to_db() {
 
     // TODO
 
     return;
 
+}
+
+
+/* Ensure item can be added to DB
+
+This function will run all the necessarry error
+checks on an item within a table.  It will check
+any unique constraint, as well as not null and
+foreign keys
+
+Parameters:
+===========
+- $table : str
+           table name
+- $dat : assoc array
+         key - column name, value - value
+
+Returns:
+========
+- true if item has no errors, error str otherwise
+
+*/
+function validate_item_in_table($table, $dat) {
+
+    $db = get_db();
+    $table_class = $db->get_table($table);
+
+
+    // check unique constraint
+    $unique_fields = $table_class->get_unique();
+    foreach($unique_fields as $field) {
+        $field_class = $table_class->get_field($field);
+        $unique_vals = $field_class->get_unique_vals();
+        $check_val = $dat[$field];
+        if ( in_array( $check_val, $unique_vals ) ) {
+            return sprintf("The field <code>%s</code> is unique and already contains the value <code>%s</code>", $field, $check_val);
+        }
+    }
+
+    // check not null (required) constraint
+
+
+
+    // check foreign key constraint
+    // XXX probably don't need to do this since the form was populated with a dropdown
+
+
+
+    return true;
 }
 
 

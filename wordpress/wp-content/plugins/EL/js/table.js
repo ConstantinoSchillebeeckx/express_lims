@@ -107,7 +107,7 @@ function deleteItem(id) {
             data: data, 
             dataType: 'json',
             success: function(response) {
-                jQuery('#datatable').DataTable().draw('page');
+                jQuery('#datatable').DataTable().draw('page'); // refresh table
                 showMsg(response);
             },
             error: function(xhr, status, error) {
@@ -241,25 +241,20 @@ function addItem() {
 
     event.preventDefault(); // cancel form submission
 
-    // TODO check for uniquness constraint before hiding modal
-    alert("fruit: " + table); 
-
-    jQuery('#addItemModal').modal('toggle'); // hide modal
-
-
-
-    return;
-
     var data = {
             "action": "addItem", 
             "table": table, // var set by build_table() in EL.php
             "pk": pk, // var set by build_table() in EL.php
+            "dat": {}, // form values
     }
-    var formData = jQuery('#addItemForm').serialize(); // form data
-    jQuery(formdata).each(function(index, obj) {
-        data[obj.name] = obj.value;
-    });
-    
+
+    var formData = jQuery('#addItemForm').serializeArray(); // form data
+    jQuery.each(formData, function() {
+        data.dat[this.name] = this.value;
+    })
+
+    console.log(data);   
+ 
     // send via AJAX to process with PHP
     jQuery.ajax({
             url: ajax_object.ajax_url, 
@@ -267,14 +262,16 @@ function addItem() {
             data: data, 
             dataType: 'json',
             success: function(response) {
-                jQuery('#datatable').DataTable().draw('page');
+                jQuery('#datatable').DataTable().draw('page'); // refresh table
                 showMsg(response);
             },
             error: function(xhr, status, error) {
-                console.log(xhr.responseText);
+                console.log(xhr);
                 showMsg({"msg":"There ws an error, please try again.", "status": false});
             }
     });
+    
+    jQuery('#addItemModal').modal('toggle'); // hide modal
 
 }
 
