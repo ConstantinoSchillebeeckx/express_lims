@@ -32,6 +32,7 @@ function getData(table, columns, pk, filter) {
     jQuery('#datatable').DataTable( {
         "processing": true,
         "serverSide": true,
+        "responsive": true,
         "ajax": {
             "url": ajax_object.ajax_url,
             "data": {
@@ -253,7 +254,6 @@ function addItem() {
         data.dat[this.name] = this.value;
     })
 
-    console.log(data);   
  
     // send via AJAX to process with PHP
     jQuery.ajax({
@@ -263,6 +263,7 @@ function addItem() {
             dataType: 'json',
             success: function(response) {
                 jQuery('#datatable').DataTable().draw('page'); // refresh table
+                console.log(response.log);
                 showMsg(response);
             },
             error: function(xhr, status, error) {
@@ -289,9 +290,40 @@ Parameters:
 
 */
 function editItem(id) {
-    console.log("edit",id);
 
-    // TODO uniqueness check
+    event.preventDefault(); // cancel form submission
+
+    var data = {
+            "action": "editItem", 
+            "table": table, // var set by build_table() in EL.php
+            "pk": pk, // var set by build_table() in EL.php
+            "pk_val": id,
+            "dat": {}, // form values
+    }
+
+    var formData = jQuery('#editItemForm').serializeArray(); // form data
+    jQuery.each(formData, function() {
+        data.dat[this.name] = this.value;
+    })
+
+    console.log(data);   
+
+    // send via AJAX to process with PHP
+    jQuery.ajax({
+            url: ajax_object.ajax_url, 
+            type: "GET",
+            data: data, 
+            dataType: 'json',
+            success: function(response) {
+                jQuery('#datatable').DataTable().draw('page'); // refresh table
+                console.log(response.log);
+                showMsg(response);
+            },
+            error: function(xhr, status, error) {
+                console.log(xhr);
+                showMsg({"msg":"There ws an error, please try again.", "status": false});
+            }
+    });
 
     jQuery('#editModal').modal('toggle'); // hide modal
 }
@@ -333,8 +365,8 @@ function showMsg(dat) {
 
     // automatically hide msg after 3s
     setTimeout(function () {
-        jQuery("#alertDiv").fadeTo(2000, 500).slideUp(500, function ($) {
-            jQuery("#alert_div").remove();
+        jQuery(".alert").fadeTo(2000, 500).slideUp(500, function ($) {
+            jQuery(".alert").remove();
         });
     }, 3000);
 }

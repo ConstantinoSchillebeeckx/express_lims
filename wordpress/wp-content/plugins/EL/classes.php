@@ -303,11 +303,17 @@ class Field {
     public function __construct($table, $name, $fks, $info) {
         $this->name = $name;
         $this->type = $info[$name]["Type"];
-        $this->required = $info[$name]["Null"] == "YES" ? false : true;
         $this->key = $info[$name]["Key"];
         $this->default = $info[$name]["Default"];
         $this->extra = $info[$name]["Extra"];
         $this->table = $table;
+
+        // check if field is required
+        if ( $info[$name]["Null"] == "YES" || in_array($this->type, array('timestamp', 'date') ) ) {
+            $this->required = false;
+        } else {
+            $this->required = true;
+        }
 
         // check if field is fk
         if (array_key_exists($table . '.' . $this->name, $fks)) {
@@ -335,6 +341,11 @@ class Field {
             $this->hidden = false;
         }
 
+    }
+
+    // return true if field is a foreign key
+    public function is_fk() {
+        return $this->is_fk;
     }
 
     // return name of field (e.g. sample)
@@ -392,13 +403,8 @@ class Field {
         }
     }
 
-    // return true if field is a foreign key
-    public function is_fk() {
-        return $this->is_fk;
-    }
-
     // if a field is an fk, this will return
-    // the which field it references
+    // the field it references
     public function get_fk_field() {
         $ref = explode('.',$this->fk_ref);
         return $ref[1];
@@ -412,7 +418,16 @@ class Field {
             $ref_table = $ref[0];
             $ref_field = $ref[1];
             $sql = sprintf( "SELECT DISTINCT(%s) from %s.%s ORDER BY %s", $ref_field, DB_NAME_EL, $ref_table, $ref_field );
-            return exec_query($sql);
+            $res = exec_query($sql);
+            $vals = array();
+            while ($row = $res->fetch_assoc()) {
+                $vals[] = $row[$ref_field];
+            }
+            if ( count( $vals ) > 0 ) {
+                return $vals;
+            } else {
+                return false;
+            }
         } else {
             return false;
         }

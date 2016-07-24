@@ -222,10 +222,10 @@ function addItem_callback() {
 }
 
 // edit item (row) to db
-add_action( 'wp_ajax_edutItem', 'editItem_callback' );
+add_action( 'wp_ajax_editItem', 'editItem_callback' );
 function editItem_callback() {
 
-    echo edit_item_to_db(); // defined in server_processing.php
+    echo edit_item_in_db(); // defined in server_processing.php
 
     wp_die(); // this is required to terminate immediately and return a proper response
 }
@@ -259,9 +259,8 @@ function get_fks_as_select($field_class) {
 
         if ( isset($fks) && isset($ref_id) ) {
             echo '<select class="form-control" id="' . $name . '" name="' . $name . '">';
-            while ($row = $fks->fetch_assoc()) {
-                $val = $row[$ref_id];
-                echo sprintf("<option value='%s'>%s</option>", $val, $val);
+            foreach ($fks as $fk) {
+                echo sprintf("<option value='%s'>%s</option>", $fk, $fk);
             }
             echo '</select>';
         }
