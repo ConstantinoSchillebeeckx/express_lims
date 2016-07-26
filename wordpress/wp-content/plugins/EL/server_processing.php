@@ -304,7 +304,7 @@ function get_data_from_db() {
         }
         $output['aaData'][] = $row;
     }
-      
+
     return json_encode( $output );
 }
 
@@ -384,10 +384,11 @@ function add_item_to_db() {
         $vals = implode(', ', array_pad(array(), count($dat), '?'));
         $table_class = $db->get_table($table);
         $stmt = sprintf('INSERT INTO %s (%s) VALUES (%s)', $table_class->get_full_name(), $cols, $vals);
-        if (prepare_statement( $stmt, $dat, $table_class) ) {
-            return json_encode(array("msg" => sprintf('Item <code>%s</code> successfully added to LIMS.', $dat[$pk]), "status" => true));
+        $prep = prepare_statement( $stmt, $dat, $table_class);
+        if ( $prep ) {
+            return json_encode(array("msg" => sprintf('Item <code>%s</code> successfully added to LIMS.', $dat[$pk]), "status" => true ));
         } else {
-            return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "log" => 'prepared statement fail: ' . $stmt));
+            return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "log" => $prep ));
         }
     }
     return json_encode(array("msg" => 'There was an error, please try again.', "status" => false));
@@ -398,11 +399,13 @@ function add_item_to_db() {
 
 /* Function called by AJAX when user edits item in modal button
 
+Edit any items that have been changed
+
 Parameters:
 ===========
 - $_GET['table']
 - $_GET['pk'] : primary key column
-- $_GET['pk_val'] : value of primary key column
+- $_GET['original_row'] : obj of original row values (key: col name, val: value)
 - $_GET['dat'] : obj of form data (key: col name, val: value)
 
 */
@@ -412,33 +415,48 @@ function edit_item_in_db() {
     $table = $_GET['table'];
     $dat = $_GET['dat'];
     $pk = $_GET['pk'];
-    $pk_val = $_GET['pk_val'];
+    $original_row = $_GET['original_row'];
+    $pk_val = $original_row[$pk];
 
-    // ERROR CHECK ITEM
     if ( isset( $table ) && isset( $dat ) ) {
 
-        $msg = validate_item_in_table($table, $dat);
-
-        if ($msg !== true) {
-            return json_encode(array("msg" => $msg, "status" => false));
+        // FIND ITEMS THAT WERE CHANGED
+        $edits = array();
+        foreach ($original_row as $field => $original) {
+            $new = $dat[$field];
+            if ($original != $new) {
+                $edits[$field] = $new;
+            }
         }
+    
+        if ( count($edits) > 0 ) {
+            // ERROR CHECK ITEM
+            $msg = validate_item_in_table($table, $edits);
 
-        $table_class = $db->get_table($table);
-        $pk_eq = sprintf("'%s = %s'", $pk, $pk_val);
-        $col_eq = array();
-        foreach ($dat as $col => $val) {
-            $col_eq[] .= "'" . $col . '=' . $val . "'";
-        }
+            if ($msg !== true) {
+                return json_encode(array("msg" => $msg, "status" => false, 'log'=>array($edits,$dat,$original_row)));
+            }
 
-        // prepare statement to add item
-        $stmt = sprintf('UPDATE %s SET %s WHERE %s', $table_class->get_full_name(), implode(', ', $col_eq), $pk_eq);
-        if (prepare_statement( $stmt, $dat, $table_class ) ) {
-            return json_encode(array("msg" => sprintf('Item <code>%s</code> successfully edited.', $pk_val), "status" => true));
+            $table_class = $db->get_table($table);
+            $pk_eq = sprintf("`%s` = '%s'", $pk, $pk_val);
+            $col_eq = array();
+            foreach ($edits as $col => $val) {
+                $col_eq[] .= "`" . $col . "`= ?";
+            }
+
+            // prepare statement to add item
+            $stmt = sprintf('UPDATE %s SET %s WHERE %s', $table_class->get_full_name(), implode(', ', $col_eq), $pk_eq);
+            $prep = prepare_statement( $stmt, $edits, $table_class );
+            if ( $prep === true ) {
+                return json_encode(array("msg" => sprintf('Item <code>%s</code> successfully edited.', $pk_val), "status" => true, 'log'=>array($stmt,$edits,$dat, $original_row, $prep)));
+            } else {
+                return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, 'log'=>$prep));
+            }
         } else {
-            return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "log" => 'prepared statement fail: ' . $stmt));
+            return json_encode(array("msg" => 'Values are not any different than current ones, nothing was edited.', "status" => true));
         }
     }
-    return json_encode(array("msg" => 'There ws an error, please try again.', "status" => false));
+    return json_encode(array("msg" => 'There was an error, please try again.', "status" => false));
 
 }
 
@@ -465,7 +483,7 @@ function prepare_statement($stmt, $args, $table_class) {
     $field_vals = array_values($args);
 
     if ( !( $statement = $conn->prepare($stmt) ) ) {
-        return json_encode(array("msg" => "Prepare failed: (" . $mysqli->errno . ") " . $mysqli->error . ' ' . $stmt, "status" => false));
+        return "Prepare failed: (" . $conn->errno . ") " . $conn->error . '; ' . $stmt;
     }
 
     // Skipped error handling for readability
@@ -481,6 +499,7 @@ function prepare_statement($stmt, $args, $table_class) {
             $callArgs[$index] = &$field_vals[$index]; // :(
         }
 
+        // check field type and enforce
         $types = '';
         foreach($args as $field => $field_val) {
             $field_class = $table_class->get_field($field);
@@ -495,8 +514,6 @@ function prepare_statement($stmt, $args, $table_class) {
             }
         }
         
-        // Assume all parameters to be strings, works quite well apparently
-        //array_unshift($callArgs, str_repeat("s", count($field_vals)) );
         array_unshift($callArgs, $types );
 
         // Now bind the parameters
@@ -506,6 +523,7 @@ function prepare_statement($stmt, $args, $table_class) {
         if ( !$statement->execute() ) {
             return false;
         } else {
+            //return var_dump($statement);
             return true;
         }
 
@@ -529,7 +547,7 @@ Parameters:
 ===========
 - $table : str
            table name
-- $dat : assoc array
+- $dat : assoc array of fields to validate
          key - column name, value - value
 
 Returns:
@@ -544,30 +562,33 @@ function validate_item_in_table($table, $dat) {
     $fields = $table_class->get_fields();
     foreach($fields as $field) {
 
-        $field_class = $table_class->get_field($field);
+        if (array_key_exists($field, $dat) ) { // only check errors on provided fields in $dat
 
-        // check unique constraint
-        if ( $field_class->is_unique() ) {
-            $unique_vals = $field_class->get_unique_vals();
-            $check_val = $dat[$field];
-            if ( in_array( $check_val, $unique_vals ) ) {
-                return sprintf("The field <code>%s</code> is unique and already contains the value <code>%s</code>", $field, $check_val);
-            }
-        }
+            $field_class = $table_class->get_field($field);
 
-        // check not null (required) constraint
-        if ( $field_class->is_required() ) {
-            if ( !(array_key_exists($field, $dat) ) ) {
-                return sprintf("The field <code>%s</code> is required, please specify a value.", $field);
+            // check unique constraint
+            if ( $field_class->is_unique() ) {
+                $unique_vals = $field_class->get_unique_vals();
+                $check_val = $dat[$field];
+                if ( in_array( $check_val, $unique_vals ) ) {
+                    return sprintf("The field <code>%s</code> is unique and already contains the value <code>%s</code>", $field, $check_val);
+                }
             }
-        }
-    
-        // check foreign key constraint
-        // XXX probably don't need to do this since the form was populated with a dropdown
-        if ( $field_class->is_fk() ) {
-            $fk_vals = $field_class->get_fks();
-            if ( !( in_array( $dat[$field], $fk_vals ) ) ) {
-                return sprintf("The field <code>%s</code> is a foreign key and must be one of the following: %s.", $field, implode(', ', $fk_vals) );
+
+            // check not null (required) constraint
+            if ( $field_class->is_required() ) {
+                if ( !(array_key_exists($field, $dat) ) ) {
+                    return sprintf("The field <code>%s</code> is required, please specify a value.", $field);
+                }
+            }
+        
+            // check foreign key constraint
+            // XXX probably don't need to do this since the form was populated with a dropdown
+            if ( $field_class->is_fk() ) {
+                $fk_vals = $field_class->get_fks();
+                if ( !( in_array( $dat[$field], $fk_vals ) ) ) {
+                    return sprintf("The field <code>%s</code> is a foreign key and must be one of the following: %s.", $field, implode(', ', $fk_vals) );
+                }
             }
         }
     }

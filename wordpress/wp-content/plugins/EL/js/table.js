@@ -166,6 +166,7 @@ function editModal(sel) {
 
     // get values from row and fill modal
     var dat = parseTable(rowIX)[0];
+    originalRowVals = dat; // set to global for comparison to edited values
     for (var col in dat) {
         var cell = dat[col];
         jQuery('#' + col).val(cell);
@@ -297,7 +298,7 @@ function editItem(id) {
             "action": "editItem", 
             "table": table, // var set by build_table() in EL.php
             "pk": pk, // var set by build_table() in EL.php
-            "pk_val": id,
+            "original_row": originalRowVals, // var set in editModal()
             "dat": {}, // form values
     }
 

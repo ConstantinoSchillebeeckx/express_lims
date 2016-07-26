@@ -159,6 +159,7 @@ function build_table() {
 
     // must be included after table vars are defined
     include_once("modals.php");
+
 }
 
 
