@@ -18,3 +18,5 @@ define("DB_PASS_EL", "K3r7mS#SMxJvDgo@dyvxv\$LeooQXN8!$");
 
 define("DEBUG", true); // if false, some erorr message won't be printed, see function err_msg() in server_processing.php
 define("HIDDEN",""); // comma separated list of general table fields that should be hidden from view
+
+define("VIEW_TABLE_URL_PATH","/view/"); // URL path of view table location (e.g. http://expresslims.com/view/?table=sampleType)

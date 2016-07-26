@@ -336,23 +336,73 @@ function delete_item_from_db() {
     $table = $_GET['table'];
     $pk = $_GET['pk'];
     $table_full_name = $db->get_name() . '.' . $table;
+    $table_class = $db->get_table($table);
 
+    // check if, when deleting a row, it isn't referenced by an FK
+    $refs = $table_class->get_ref();
+    if ($refs) {
+        foreach($refs as $ref => $field_class) {
+            $tmp = explode('.',$ref);
+            $ref_table = $tmp[0];
+            $ref_table_safe = explode('_',$ref_table)[1];
+            $ref_field = $tmp[1];
 
-    // TODO we need to run a check when deleting a primary key that is being referenced as a foreign key
-
-    // delete row
-    $sql = sprintf("DELETE FROM %s WHERE `%s` = '%s'", $table_full_name, $pk, $id);
-    if (exec_query($sql)) {
-        $msg = sprintf("The item <code>%s</code> was properly archived.", $id);
-        $status = true;
-        $ret = array("msg" => $msg, "status" => $status);
+            // check if ref table has a ref field equal to $id
+            if (table_has_value($ref_table, $ref_field, $id)) {
+                $msg = sprintf("The item <code>$pk</code> that you are trying to delete is referenced as a foreign key in table <code><a href='%s?table=$ref_table_safe'>$ref_table_safe</a></code>; you must remove all the entries in that table first, before deleting this entry.", VIEW_TABLE_URL_PATH);
+                $ret = array("msg" => $msg, "status" => false);
+            } else {
+                // delete row
+                $sql = sprintf("DELETE FROM %s WHERE `%s` = '%s'", $table_full_name, $pk, $id);
+                if (exec_query($sql)) {
+                    $msg = sprintf("The item <code>%s</code> was properly archived.", $id);
+                    $ret = array("msg" => $msg, "status" => true);
+                }
+            }
+        }
     }
 
 
     // update history
+    // TODO
 
     return json_encode($ret);
 }
+
+/* Check if table has value
+
+Function useful for checking if a table has a certain value;
+used when trying to remove a field that is referenced by
+a FK.
+
+Parameters:
+===========
+- $ref_table : str
+               table in which to check for results
+- $ref_field : str
+               field to query
+- $id : str
+        value in $ref_field to query
+
+
+*/
+function table_has_value($ref_table, $ref_field, $id) {
+
+    $db->get_db();
+    $db_name = $db->get_name();
+    $sql = "SELECT $ref_field FROM $db_name.$refTable WHERE $ref_field = '$id'";
+    $result = exec_query($sql);
+
+    if ($result->num_rows ) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+
+
 
 
 /* Function called by AJAX when user adds item with modal button

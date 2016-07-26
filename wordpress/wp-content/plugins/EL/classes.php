@@ -230,6 +230,36 @@ class Table {
         }
     }
 
+    // check if table contains a field that is
+    // referenced by an FK
+    // if so, return the field name(s) [table.col] as an assoc
+    // array (name: class), otherwise false
+    public function get_ref() {
+        $fields = $this->get_fields();
+        $fks = array();  
+
+        foreach($fields as $field) {
+            $field_class = $this->get_field($field);
+            if ($field_class->is_ref()) {
+
+                $ref = $field_class->get_ref();
+                $tmp = explode('.',$ref);
+                $ref_table = $tmp[0];
+                $ref_field = $tmp[1];
+
+                $ref_table_class = $_SESSION['db']->get_table($ref_table); // lazy
+
+                $fks[$ref] = $ref_table_class->get_field($ref_field);
+            }
+        }
+
+        if ( count($fks) > 0 ) {
+            return $fks;
+        } else {
+            return false;
+        }
+    }
+
     // return field name that is primary key in table
     // returns false if none found
     public function get_pk() {
@@ -348,9 +378,20 @@ class Field {
         return $this->is_fk;
     }
 
+    // return true if field is referenced by an FK
+    public function is_ref() {
+        return $this->is_ref;
+    }
+
     // return name of field (e.g. sample)
     public function get_name() {
         return $this->name;
+    }
+
+    // if a field is referenced by a FK
+    // return the table.col it references
+    public function get_ref() {
+        return $this->ref;
     }
 
     // return full name of field (db123.matatu_samples.sample)
