@@ -232,8 +232,7 @@ class Table {
 
     // check if table contains a field that is
     // referenced by an FK
-    // if so, return the field name(s) [table.col] as an assoc
-    // array (name: class), otherwise false
+    // if so, return the field name(s) [table.col] as an array
     public function get_ref() {
         $fields = $this->get_fields();
         $fks = array();  
@@ -243,13 +242,7 @@ class Table {
             if ($field_class->is_ref()) {
 
                 $ref = $field_class->get_ref();
-                $tmp = explode('.',$ref);
-                $ref_table = $tmp[0];
-                $ref_field = $tmp[1];
-
-                $ref_table_class = $_SESSION['db']->get_table($ref_table); // lazy
-
-                $fks[$ref] = $ref_table_class->get_field($ref_field);
+                $fks[] = $ref;
             }
         }
 

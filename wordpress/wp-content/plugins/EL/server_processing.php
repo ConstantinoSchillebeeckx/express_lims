@@ -338,10 +338,13 @@ function delete_item_from_db() {
     $table_full_name = $db->get_name() . '.' . $table;
     $table_class = $db->get_table($table);
 
-    // check if, when deleting a row, it isn't referenced by an FK
+    // check if, when deleting a row, it's referenced by an FK
+    // if it is, then the item can't be deleted unless the 
+    // reference table ID doesn't have any values
     $refs = $table_class->get_ref();
     if ($refs) {
-        foreach($refs as $ref => $field_class) {
+        foreach($refs as $ref) {
+
             $tmp = explode('.',$ref);
             $ref_table = $tmp[0];
             $ref_table_safe = explode('_',$ref_table)[1];
@@ -349,19 +352,19 @@ function delete_item_from_db() {
 
             // check if ref table has a ref field equal to $id
             if (table_has_value($ref_table, $ref_field, $id)) {
-                $msg = sprintf("The item <code>$pk</code> that you are trying to delete is referenced as a foreign key in table <code><a href='%s?table=$ref_table_safe'>$ref_table_safe</a></code>; you must remove all the entries in that table first, before deleting this entry.", VIEW_TABLE_URL_PATH);
+                $msg = sprintf("The item <code>$id</code> that you are trying to delete is referenced as a foreign key in the table <code><a href='%s?table=$ref_table_safe'>$ref_table_safe</a></code>; you must remove all the entries in that table first, before deleting this entry.", VIEW_TABLE_URL_PATH);
                 $ret = array("msg" => $msg, "status" => false);
-            } else {
-                // delete row
-                $sql = sprintf("DELETE FROM %s WHERE `%s` = '%s'", $table_full_name, $pk, $id);
-                if (exec_query($sql)) {
-                    $msg = sprintf("The item <code>%s</code> was properly archived.", $id);
-                    $ret = array("msg" => $msg, "status" => true);
-                }
+                return json_encode($ret);
             }
         }
     }
 
+    // delete row
+    $sql = sprintf("DELETE FROM %s WHERE `%s` = '%s'", $table_full_name, $pk, $id);
+    if (exec_query($sql)) {
+        $msg = sprintf("The item <code>%s</code> was properly archived.", $id);
+        $ret = array("msg" => $msg, "status" => true);
+    }
 
     // update history
     // TODO
@@ -388,9 +391,9 @@ Parameters:
 */
 function table_has_value($ref_table, $ref_field, $id) {
 
-    $db->get_db();
+    $db = get_db();
     $db_name = $db->get_name();
-    $sql = "SELECT $ref_field FROM $db_name.$refTable WHERE $ref_field = '$id'";
+    $sql = sprintf("SELECT %s FROM %s.%s WHERE %s = '%s'", $ref_field, $db_name, $ref_table, $ref_field, $id);
     $result = exec_query($sql);
 
     if ($result->num_rows ) {

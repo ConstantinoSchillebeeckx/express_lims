@@ -16,3 +16,8 @@ body {
 .dataTables_wrapper {
     margin-top: 20px;
 }
+
+code a {
+    text-decoration: underline;
+    color: #337ab7;
+}

@@ -109,6 +109,7 @@ function deleteItem(id) {
             dataType: 'json',
             success: function(response) {
                 jQuery('#datatable').DataTable().draw('page'); // refresh table
+                console.log(response.log);
                 showMsg(response);
             },
             error: function(xhr, status, error) {
