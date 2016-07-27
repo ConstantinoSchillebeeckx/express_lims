@@ -102,22 +102,8 @@ function deleteItem(id) {
             "pk": pk, // var set by build_table() in EL.php
     }
 
-    // send via AJAX to process with PHP
-    jQuery.ajax({
-            url: ajax_object.ajax_url, 
-            type: "GET",
-            data: data, 
-            dataType: 'json',
-            success: function(response) {
-                jQuery('#datatable').DataTable().draw('page'); // refresh table
-                console.log(response.log);
-                showMsg(response);
-            },
-            error: function(xhr, status, error) {
-                console.log(xhr.responseText);
-                showMsg({"msg":"There ws an error, please try again.", "status": false});
-            }
-    });
+    // send data to server
+    doAJAX(data);
 
 }
 
@@ -258,22 +244,8 @@ function addItem() {
     })
 
  
-    // send via AJAX to process with PHP
-    jQuery.ajax({
-            url: ajax_object.ajax_url, 
-            type: "GET",
-            data: data, 
-            dataType: 'json',
-            success: function(response) {
-                jQuery('#datatable').DataTable().draw('page'); // refresh table
-                console.log(response.log);
-                showMsg(response);
-            },
-            error: function(xhr, status, error) {
-                console.log(xhr);
-                showMsg({"msg":"There ws an error, please try again.", "status": false});
-            }
-    });
+    // send data to server
+    doAJAX(data);
     
     jQuery('#addItemModal').modal('toggle'); // hide modal
 
@@ -309,7 +281,27 @@ function editItem(id) {
         data.dat[this.name] = this.value;
     })
 
-    console.log(data);   
+    // send data to server
+    doAJAX(data);
+
+    jQuery('#editModal').modal('toggle'); // hide modal
+}
+
+
+
+
+/* Send AJAX request to sever
+
+Will send an AJAX request to the server and properly show/log
+the response as either a message to the user or an error
+message in the console.
+
+Paramters:
+- data : obj
+         data object to send to the server
+
+*/
+function doAJAX(data) {
 
     // send via AJAX to process with PHP
     jQuery.ajax({
@@ -320,7 +312,13 @@ function editItem(id) {
             success: function(response) {
                 jQuery('#datatable').DataTable().draw('page'); // refresh table
                 console.log(response.log);
-                showMsg(response);
+
+                // disable autohide of message if certain type of error
+                if (response.msg.indexOf('that you are trying to delete is referenced as a foreign key') > -1) {
+                    showMsg(response, true);
+                } else {
+                    showMsg(response);
+                }
             },
             error: function(xhr, status, error) {
                 console.log(xhr);
@@ -328,8 +326,10 @@ function editItem(id) {
             }
     });
 
-    jQuery('#editModal').modal('toggle'); // hide modal
+
 }
+
+
 
 
 // activate modals
@@ -356,22 +356,28 @@ Parameters:
 - dat : object
         -> msg : msg to display
         -> status : bool - true if success msg, false if error msg
-
+- disableTimer : bool (optional)
+            if true, message will not automatically be removed, defaults to false (3s timer)
 */
-function showMsg(dat) {
+function showMsg(dat, disableTimer=false) {
 
     var type = dat.status ? 'success' : 'danger';
     var msg = dat.msg;
-    var alertDiv = '<div id="alertDiv" class="alert alert-' + type + ' alert-dismissible" role="alert">' + msg + '</div>';
+    var alertDiv = '<div id="alertDiv" class="alert alert-' + type + ' alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>' + msg + '</div>';
 
     jQuery( alertDiv ).prependTo( "main" );
 
     // automatically hide msg after 3s
-    setTimeout(function () {
+    var timeout = setTimeout(function () {
         jQuery(".alert").fadeTo(2000, 500).slideUp(500, function ($) {
             jQuery(".alert").remove();
         });
     }, 3000);
+
+    if (disableTimer) {
+        clearTimeout(timeout);
+    }
+
 }
 
 
