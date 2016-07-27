@@ -28,6 +28,7 @@ function getData(table, columns, pk, filter) {
     buttonHTML += '<button onclick="deleteModal(this)" type="button" class="btn-xs btn btn-danger" title="Delete"><i class="fa fa-times" aria-hidden="true"></i></button>'
     buttonHTML += '</div>';
 
+    jQuery.fn.dataTable.ext.errMode = 'throw'; // Have DataTables throw errors rather than alert() them
 
     jQuery('#datatable').DataTable( {
         "processing": true,
