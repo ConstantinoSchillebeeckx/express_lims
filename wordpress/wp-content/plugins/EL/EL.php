@@ -389,11 +389,12 @@ register_activation_hook( __FILE__, 'yti_add_roles_on_plugin_activation' );
 // Load conditional scripts
 function EL_conditional_scripts() {
 
+    wp_enqueue_script('table', plugin_dir_url( __FILE__ ) . '/js/table.js', array('jquery'));
+    wp_localize_script( 'table', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
+
     if (is_page('view')) {
         wp_enqueue_style('datatables', 'https://cdn.datatables.net/v/bs/dt-1.10.12/r-2.1.0/datatables.min.css');
         wp_enqueue_script('datatables', 'https://cdn.datatables.net/v/bs/dt-1.10.12/r-2.1.0/datatables.min.js');
-        wp_enqueue_script('table', plugin_dir_url( __FILE__ ) . '/js/table.js', array('jquery'));
-        wp_localize_script( 'table', 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
     }
 
 }

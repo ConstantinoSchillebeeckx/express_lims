@@ -109,6 +109,9 @@ function html5blank_header_scripts()
     wp_register_script('conditionizr', get_template_directory_uri() . '/js/lib/conditionizr-4.3.0.min.js', array(), '4.3.0');
     wp_enqueue_script('conditionizr');
 
+    //wp_register_script('table', get_template_directory_uri() . '/js/table.js', array('jquery'));
+    //wp_enqueue_script('table');
+
 }
 
 // Load HTML5 Blank conditional scripts

@@ -238,11 +238,7 @@ function addItem() {
             "dat": {}, // form values
     }
 
-    var formData = jQuery('#addItemForm').serializeArray(); // form data
-    jQuery.each(formData, function() {
-        data.dat[this.name] = this.value;
-    })
-
+    data = getFormData('#addItemForm', data);
  
     // send data to server
     doAJAX(data);
@@ -379,5 +375,129 @@ function showMsg(dat, disableTimer=false) {
     }
 
 }
+
+var fieldNum = 0;
+/* Function called by "Add field" button on add table template page
+Will add all the necessarry GUI fields for defining a given field
+*/
+function addField() {
+    fieldNum += 1;
+    var dom = ['<div style="margin-bottom:40px;" id="field-"' + fieldNum + '"</div>',
+            '<div class="form-group">',
+            '<label class="col-sm-2 control-label" id="fieldLabel">Field ' + fieldNum + '</label>',
+            '<div class="col-sm-2">',
+            '<input type="text" class="form-control" name="name-' + fieldNum + '" placeholder="name">',
+            '</div>',
+            '</div>',
+            '<div class="form-group">',
+            '<label class="col-sm-2 control-label" id="fieldLabel">Default value</label>',
+            '<div class="col-sm-2">',
+            '<input type="text" class="form-control" name="default-' + fieldNum + '">',
+            '</div>',
+            '</div>',
+            '<div class="form-group">',
+            '<label class="col-sm-2 control-label">Unique</label>',
+            '<div class="col-sm-2">',
+            '<label class="checkbox-inline">',
+            '<input type="checkbox" name="unique-' + fieldNum + '" value=true> check if field is unique',
+            '</label>',
+            '</div>',
+            '</div>',
+            '<div class="form-group">',
+            '<label class="col-sm-2 control-label">Required</label>',
+            '<div class="col-sm-6">',
+            '<label class="checkbox-inline">',
+            '<input type="checkbox" name="required-' + fieldNum + '" value=true> check if field is required',
+            '</label>',
+            '</div>',
+            '</div>',
+            '<div class="form-group">',
+            '<label class="col-sm-2 control-label">Type</label>',
+            '<div class="col-sm-2">',
+            '<select class="form-control" onChange="selectChange(' + fieldNum + ')" id="type-' + fieldNum + '" name="type-' + fieldNum + '">',
+            '<option value="" disabled selected style="display:none;">Choose</option>',
+            '<option value="varchar">String</option>',
+            '<option value="int">Integer</option>',
+            '<option value="float">Float</option>',
+            '<option value="date">Date</option>',
+            '<option value="timestamp">Date & Time</option>',
+            '<option value="fk">Foreign</option>',
+            '</select>',
+            '</div>',
+            '<div class="col-sm-8" id="hiddenType-' + fieldNum + '">',
+            '</div>',
+            '</div>',
+            '</div>']
+    jQuery("form").append(dom.join('\n'));
+}
+// hide/show divs based on what user selects for field type
+function selectChange(id){
+    var val = jQuery("#type-" + id).val()
+    console.log(id, val);
+    var hidden = jQuery("#hiddenType-" + id);
+    if (val == 'fk') {
+        hidden.html('<select class="form-control" name="foreignKey-' + id + '"></select>');
+    } else if (val == 'date') {
+        hidden.html('<input type="checkbox" clas="form-control" name="currentDate-' + id + '" value=true> check if you want this field automatically filled with the current date.');
+    } else {
+        hidden.html('');
+    }
+}
+
+
+/* Function called when "Create table" button is clicked
+*/
+function addTable() {
+    
+    event.preventDefault(); // cancel form submission
+
+    var data = {
+            "action": "addItem", 
+            "dat": {}, // form values
+    }
+
+    data = getFormData('form', data);
+ 
+    // send data to server
+    //doAJAX(data);
+
+
+    // do some error checking
+    // table must have at least one unique field (PK)
+    console.log(data)
+}
+
+
+/* Will parse form on page into obj for use with AJAX
+
+Parameters:
+===========
+- sel : str
+        selector for form (e.g. form)
+- data : obj (optional)
+         if adding to obj, must be or form
+         {'dat':{}}
+
+Returns:
+========
+- obj : will have a key 'dat' filled with form values
+
+*/
+function getFormData(sel, data=null) {
+
+    if (!data) {
+        data = {'dat':{}};
+    }
+
+    var formData = jQuery(sel).serializeArray(); // form data
+    jQuery.each(formData, function() {
+        data.dat[this.name] = this.value;
+    })
+
+    return data;
+
+}
+
+
 
 
