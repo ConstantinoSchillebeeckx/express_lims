@@ -432,6 +432,21 @@ function add_item_to_db() {
             return json_encode(array("msg" => $msg, "status" => false));
         }
 
+        // check field type and enforce
+        $types = '';
+        foreach($dat as $field => $field_val) {
+            $field_class = $table_class->get_field($field);
+            $type = $field_class->get_type();
+            
+            if (strpos($type, 'float') !== false) {
+                $types .= 'd';
+            } else if (strpos($type, 'int') !== false) {
+                $types .= 'i';
+            } else {
+                $types .= 's';
+            }
+        }
+
         // prepare statement to add item
         $cols = '`' . implode( '`, `', array_keys($dat) ) . '`';
         $vals = implode(', ', array_pad(array(), count($dat), '?'));
@@ -497,13 +512,28 @@ function edit_item_in_db() {
                 $col_eq[] .= "`" . $col . "`= ?";
             }
 
+            // check field type and enforce
+            $types = '';
+            foreach($edits as $field => $field_val) {
+                $field_class = $table_class->get_field($field);
+                $type = $field_class->get_type();
+                
+                if (strpos($type, 'float') !== false) {
+                    $types .= 'd';
+                } else if (strpos($type, 'int') !== false) {
+                    $types .= 'i';
+                } else {
+                    $types .= 's';
+                }
+            }
+
             // prepare statement to add item
             $stmt = sprintf('UPDATE %s SET %s WHERE %s', $table_class->get_full_name(), implode(', ', $col_eq), $pk_eq);
-            $prep = prepare_statement( $stmt, $edits, $table_class );
+            $prep = prepare_statement( $stmt, $edits, $types );
             if ( $prep === true ) {
-                return json_encode(array("msg" => sprintf('Item <code>%s</code> successfully edited.', $pk_val), "status" => true, 'log'=>array($stmt,$edits,$dat, $original_row, $prep)));
+                return json_encode(array("msg" => sprintf('Item <code>%s</code> successfully edited.', $pk_val), "status" => true, 'log'=>array($stmt,$edits,$dat, $original_row, $prep))); // TODO cleanup log when finished (for safety)
             } else {
-                return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, 'log'=>$prep));
+                return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, 'log'=>$prep)); // clean up log when finished (for safety)
             }
         } else {
             return json_encode(array("msg" => 'Values are not any different than current ones, nothing was edited.', "status" => true));
@@ -521,14 +551,90 @@ function edit_item_in_db() {
 Parameters:
 ===========
 - $_GET['dat'] : obj of form data (key: col name, val: value)
-                 at a minimum will have xxx
+                 at a minimum will have the following keys:
+                 - table_name (safe name)
+                 - name-1 (field name)
+                 - type-1 (field type)
 - $_GET['field_num'] : number of fields being added
 
 */
 function add_table_to_db() {
 
+    $db = get_db();
 
-    return false;
+    $data = $_GET['dat'];
+    $field_num = $_GET['field_num'];
+
+    // ensure table name is only letters
+    if ( ctype_alpha($data['table_name']) ) {
+        $table_name = $db->get_name() . '.' . $db->get_company() . '_' . $data['table_name'];
+    } else {
+        return json_encode(array("msg" => 'Only letters are allowed in the table name.', "status" => false)); 
+    }
+
+    $binds = array();
+
+    // construct SQL for table by checking each field
+    $has_uid = false; // if table has unique ID
+    $tmp_sql = '';
+    for ($i = 1; $i <= $field_num; $i++) {
+        $field_name = $data['name-' . $i];
+        $field_default = isset($data['default-' . $i]) ? $data['default-' . $i] : false;
+
+        // ensure field name is only alphanumeric
+        if (!preg_match('/^[a-z\s]*$/i', $field_name)) {
+            return json_encode(array("msg" => 'Only alphanumeric characters are allowed in the field name.', "status" => false)); 
+        }
+
+        // ensure default field is only alphanumeric
+        if (!preg_match('/^[a-z\s]*$/i', $field_default)) {
+            return json_encode(array("msg" => 'Only alphanumeric characters are allowed as a default value.', "status" => false)); 
+        }
+
+        $field_type = $data['type-' . $i];
+        $field_current = isset($data['currentDate-' . $i]) ? $data['currentDate-' . $i] : false;
+
+        // date field type cannot have default current_date,
+        // so we change the type to timestamp
+        // and leave a note in the comment field
+        if ($field_current && $field_type == 'date') {
+            $field_type = 'timestamp';
+            $field_default = 'CURRENT_TIMESTAMP';
+            $comment='COMMENT="{\'column_format\': \'date\'}"';
+            $binds[] = $comment;
+        } elseif ($field_type == 'fk') { // foreign key cannot have a default value
+            $field_default = false;
+        }
+
+        $tmp_sql .= " $field_name $field_type";
+
+        $field_required = isset($data['required-' . $i]) ? $data['required-' . $i] : false;
+        $field_required ? $tmp_sql .= " NOT NULL" : null;
+
+        if ($field_default) {
+            $field_type == 'timestamp' ? $tmp_sql .= " DEFAULT CURRENT_TIMESTAMP" : $tmp_sql .= " DEFAULT $field_default";
+        }
+
+        $field_unique = isset($data['unique-' . $i]) ? $data['unique-' . $i] : false;
+        $field_unique ? $tmp_sql .= " UNIQUE" : null;
+   
+
+ 
+        $field_unique ? $has_uid = true : null; // set flag if unique field found
+        if ($i == $field_num && !$has_uid) { // if no field has been set as unique, create one
+            $tmp_sql .= ', UID int NOT NULL PRIMARY KEY';
+        }
+
+    
+    } 
+    $sql = "CREATE TABLE $table_name ( $tmp_sql )";
+
+    // define string length
+    $sql = str_replace("varchar", "varchar(45)", $sql);
+
+    return json_encode(array('msg'=>$sql,'status'=>true, 'log'=>$sql));
+
+    //$ret = exec_query($sql);
 
 }
 
@@ -539,19 +645,22 @@ function add_table_to_db() {
 Parameters:
 ===========
 - $stms : str
-          statement with ? read to be bound
-- $args : assoc array of col:value to parse
-          array with values used for binding
-- $table_class : Table class
+          statement with ? vars to be bound
+- $args : assoc array of col:value in which
+          vals will be bound to '?'
+- $types : str 
+           string with length equal to number
+           of variables to bind, representing
+           variable type.  e.g. if 3 strings,
+           then 'sss'
 
 Returns:
 ========
-- true if successful, false otherwise
-
+- true if successful query execute, returns error string otherwise
 
 */
 // https://edorian.github.io/2011-05-12-References-suck-lets-fix-mysqli-prepared-statements/
-function prepare_statement($stmt, $args, $table_class) {
+function prepare_statement($stmt, $args, $types) {
 
     $conn = connect_db();
     $field_vals = array_values($args);
@@ -572,21 +681,6 @@ function prepare_statement($stmt, $args, $table_class) {
         foreach($field_vals as $index => $arg) {
             $callArgs[$index] = &$field_vals[$index]; // :(
         }
-
-        // check field type and enforce
-        $types = '';
-        foreach($args as $field => $field_val) {
-            $field_class = $table_class->get_field($field);
-            $type = $field_class->get_type();
-            
-            if (strpos($type, 'float') !== false) {
-                $types .= 'd';
-            } else if (strpos($type, 'int') !== false) {
-                $types .= 'i';
-            } else {
-                $types .= 's';
-            }
-        }
         
         array_unshift($callArgs, $types );
 
@@ -595,9 +689,8 @@ function prepare_statement($stmt, $args, $table_class) {
 
         // Now we can execute the statement, finally
         if ( !$statement->execute() ) {
-            return false;
+            return "SQL error: " . $statement->error . '; ' . $stmt;
         } else {
-            //return var_dump($statement);
             return true;
         }
 

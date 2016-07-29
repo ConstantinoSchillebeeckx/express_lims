@@ -391,7 +391,7 @@ function addField() {
             '<div class="form-group">',
             '<label class="col-sm-2 control-label" id="fieldLabel">Field name*</label>',
             '<div class="col-sm-3">',
-            '<input type="text" class="form-control" name="name-' + fieldNum + '" required>',
+            '<input type="text" class="form-control" name="name-' + fieldNum + '" required pattern="[a-zA-Z0-9\s]+" title="Letters and number only">',
             '</div>',
             '<label class="col-sm-1 control-label">Type</label>',
             '<div class="col-sm-2">',
@@ -409,7 +409,7 @@ function addField() {
             '<div class="form-group">',
             '<label class="col-sm-2 control-label" id="fieldLabel">Default value</label>',
             '<div class="col-sm-3">',
-            '<input type="text" class="form-control" name="default-' + fieldNum + '">',
+            '<input type="text" class="form-control" name="default-' + fieldNum + '" pattern="[a-zA-Z0-9\s]+" title="Letters and numbers only">',
             '</div>',
             '<div class="col-sm-offset-1 col-sm-6" id="hiddenType-' + fieldNum + '">',
             '</div>',
@@ -418,13 +418,13 @@ function addField() {
             '<label class="col-sm-2 control-label">Required</label>',
             '<div class="col-sm-3">',
             '<label class="checkbox-inline">',
-            '<input type="checkbox" name="required-' + fieldNum + '" value=true> check if field is required',
+            '<input type="checkbox" name="required-' + fieldNum + '"> check if field is required',
             '</label>',
             '</div>',
             '<label class="col-sm-1 control-label">Unique</label>',
             '<div class="col-sm-3">',
             '<label class="checkbox-inline">',
-            '<input type="checkbox" name="unique-' + fieldNum + '" value=true> check if field is unique',
+            '<input type="checkbox" name="unique-' + fieldNum + '"> check if field is unique',
             '</label>',
             '</div>',
             '</div>',
@@ -441,10 +441,11 @@ function selectChange(id){
     if (val == 'fk') {
         var html = '<p>Text for foreign key</p>';
         html += getFKchoices(id);
-        
         hidden.html(html);
     } else if (val == 'date') {
-        hidden.html('<input type="checkbox" clas="form-control" name="currentDate-' + id + '" value=true> check if you want this field automatically filled with the current date.');
+        html = '<span>Text for date field</span><br>';
+        html +='<input type="checkbox" clas="form-control" name="currentDate-' + id + '"> check if you want this field automatically filled with the date.';
+        hidden.html(html);
     } else if (val == 'varchar') {
         hidden.html('<p>Text for string field</p>');
     } else if (val == 'int') {
@@ -452,7 +453,9 @@ function selectChange(id){
     } else if (val == 'float') {
         hidden.html('<p>Text for float field</p>');
     } else if (val == 'timestamp') {
-        hidden.html('<p>Text for timestamp field</p>');
+        html = '<span>Text for timestamp field</span><br>';
+        html +='<input type="checkbox" clas="form-control" name="currentDate-' + id + '"> check if you want this field automatically filled with the date & time.';
+        hidden.html(html);
     }
 }
 
@@ -464,24 +467,48 @@ function addTable() {
     event.preventDefault(); // cancel form submission
 
     var data = {
-            "action": "addItem", 
+            "action": "addTable", 
             "dat": getFormData('form'), // form values
             "field_num": jQuery('[id^=field-]').length // number of fields
     }
     console.log(data);
 
-    // Do a bit of error checking before
-    // we send data to server
 
-    // sensure field names are unique
+
+    // ensure table doesn't exist
+    // global var db is set in the add_table WP template
+    // NOTE: protected attributes will have a prepended '*' in the key, see:
+    // https://ocramius.github.io/blog/fast-php-object-to-array-conversion/
+    var tables = db['\0*\0tables'];
+    for (var i = 0; i < tables.length; i++) {
+        var table = tables[i];
+        var table_safe = table.split('_')[1];
+        if (table_safe.toLowerCase() == data.dat.table_name.toLowerCase()) {
+            alert('need an error message here about table existing'); // TODO
+        }
+    }
+
     var names = [];
     for (var i = 1; i <= data.field_num; i++ ) {
+
+        // sensure field names are unique
         var field = 'name-' + i;
         var name = data.dat[field];
         if (names.indexOf(name) > -1) { // name not unique
-            console.log('Do something here')
+            alert('need an error message here about field names not being unique'); // TODO
         }        
         names.push(name);
+
+        // check that default value matches with field type
+        var defaultVal = data.dat['default-' + i];
+        if (defaultVal) {
+            var type = data.dat['type-' + i];
+            if ( type == 'float' && !(isFloat(defaultVal) || isInt(defaultVal)) ) {
+                alert("need an error message here about default value not being a float");
+            } else if ( type == 'int' && !isInt(defaultVal) ) {
+                alert("need an error message here about default value not being an int");
+            }
+        }
     }
 
  
@@ -489,6 +516,19 @@ function addTable() {
     doAJAX(data);
 
 }
+
+// http://stackoverflow.com/a/3886106/1153897
+// NOTE: will return true when checking '1'
+function isInt(n){
+    return Number(n) === parseInt(n) && parseInt(n) % 1 === 0;
+}
+
+// http://stackoverflow.com/a/3886106/1153897
+// NOTE: will return true when checking '1.1'
+function isFloat(n){
+    return Number(n) === parseFloat(n) && parseFloat(n) % 1 !== 0;
+}
+
 
 
 /* Will parse form on page into obj for use with AJAX
@@ -510,7 +550,13 @@ function getFormData(sel) {
     var formData = jQuery(sel).serializeArray(); // form data
 
     jQuery.each(formData, function() {
-        data[this.name] = this.value;
+        var val = this.value;
+        if (val != '') { // don't capture empty fields
+            if (val == 'on') {
+                val = true;
+            }
+            data[this.name] = val;
+        }
     })
 
     return data;
