@@ -17,23 +17,25 @@ get_header(); ?>
                 <!-- article -->
                 <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
 
-                    <form class="form-horizontal" onsubmit="return false;">
+                    <form class="form-horizontal" onsubmit="addTable()">
                       <div class="form-group">
                         <label for="inputEmail3" class="col-sm-2 control-label">Table name</label>
                         <div class="col-sm-2">
-                          <input type="text" class="form-control" id="table_name" placeholder="samples" required>
+                          <input type="text" class="form-control" name="table_name" placeholder="samples" required>
                         </div>
-                      </div>
-                      <hr>
-                      <div class="form-group" id="addFieldBtnGrp">
-                        <div class="col-sm-offset-2 col-sm-10">
+                        <div class="col-sm-2">
                           <button type="button" class="btn btn-default btn-info" onclick="addField()" id="add_field" >Add field</button>
-                          <button type="submit" class="btn btn-default pull-right btn-success" onclick="addTable()">Create table</button>
+                        </div>
+                        <div class="col-sm-offset-4 col-sm-2">
+                          <button type="submit" class="btn btn-default pull-right btn-success">Create table</button>
                         </div>
                       </div>
                     </form>
-                    
-                    <script>
+
+
+                    <script  type="text/javascript">
+                        db = <?php echo get_db()->asJSON(); // send DB to javascript var ?>
+
                         jQuery(function() { // automatically add the first field
                             jQuery('#add_field').click();
                         });

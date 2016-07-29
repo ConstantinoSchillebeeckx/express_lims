@@ -513,6 +513,27 @@ function edit_item_in_db() {
 
 }
 
+
+
+/* Function called by AJAX when user attempts to add table
+
+
+Parameters:
+===========
+- $_GET['dat'] : obj of form data (key: col name, val: value)
+                 at a minimum will have xxx
+- $_GET['field_num'] : number of fields being added
+
+*/
+function add_table_to_db() {
+
+
+    return false;
+
+}
+
+
+
 /* Put together and execute prepared statement
 
 Parameters:

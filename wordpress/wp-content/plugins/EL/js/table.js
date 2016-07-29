@@ -235,10 +235,9 @@ function addItem() {
             "action": "addItem", 
             "table": table, // var set by build_table() in EL.php
             "pk": pk, // var set by build_table() in EL.php
-            "dat": {}, // form values
+            "dat": getFormData('#addItemForm'), // form values
     }
 
-    data = getFormData('#addItemForm', data);
  
     // send data to server
     doAJAX(data);
@@ -306,7 +305,9 @@ function doAJAX(data) {
             data: data, 
             dataType: 'json',
             success: function(response) {
-                jQuery('#datatable').DataTable().draw('page'); // refresh table
+                if (jQuery('#datatable').length) {
+                    jQuery('#datatable').DataTable().draw('page'); // refresh table
+                }
                 console.log(response.log);
 
                 // disable autohide of message if certain type of error
@@ -382,39 +383,19 @@ Will add all the necessarry GUI fields for defining a given field
 */
 function addField() {
     fieldNum += 1;
-    var dom = ['<div style="margin-bottom:40px;" id="field-"' + fieldNum + '"</div>',
+    var dom = ['<div class="panel panel-default" style="margin-bottom:40px;" id="field-' + fieldNum + '">',
+            '<div class="panel-heading">',
+            '<h3 class="panel-title">Field #' + fieldNum + '</h3>',
+            '</div>',
+            '<div class="panel-body">',
             '<div class="form-group">',
-            '<label class="col-sm-2 control-label" id="fieldLabel">Field ' + fieldNum + '</label>',
+            '<label class="col-sm-2 control-label" id="fieldLabel">Field name*</label>',
+            '<div class="col-sm-3">',
+            '<input type="text" class="form-control" name="name-' + fieldNum + '" required>',
+            '</div>',
+            '<label class="col-sm-1 control-label">Type</label>',
             '<div class="col-sm-2">',
-            '<input type="text" class="form-control" name="name-' + fieldNum + '" placeholder="name">',
-            '</div>',
-            '</div>',
-            '<div class="form-group">',
-            '<label class="col-sm-2 control-label" id="fieldLabel">Default value</label>',
-            '<div class="col-sm-2">',
-            '<input type="text" class="form-control" name="default-' + fieldNum + '">',
-            '</div>',
-            '</div>',
-            '<div class="form-group">',
-            '<label class="col-sm-2 control-label">Unique</label>',
-            '<div class="col-sm-2">',
-            '<label class="checkbox-inline">',
-            '<input type="checkbox" name="unique-' + fieldNum + '" value=true> check if field is unique',
-            '</label>',
-            '</div>',
-            '</div>',
-            '<div class="form-group">',
-            '<label class="col-sm-2 control-label">Required</label>',
-            '<div class="col-sm-6">',
-            '<label class="checkbox-inline">',
-            '<input type="checkbox" name="required-' + fieldNum + '" value=true> check if field is required',
-            '</label>',
-            '</div>',
-            '</div>',
-            '<div class="form-group">',
-            '<label class="col-sm-2 control-label">Type</label>',
-            '<div class="col-sm-2">',
-            '<select class="form-control" onChange="selectChange(' + fieldNum + ')" id="type-' + fieldNum + '" name="type-' + fieldNum + '">',
+            '<select class="form-control" onChange="selectChange(' + fieldNum + ')" id="type-' + fieldNum + '" name="type-' + fieldNum + '" required>',
             '<option value="" disabled selected style="display:none;">Choose</option>',
             '<option value="varchar">String</option>',
             '<option value="int">Integer</option>',
@@ -424,23 +405,54 @@ function addField() {
             '<option value="fk">Foreign</option>',
             '</select>',
             '</div>',
-            '<div class="col-sm-8" id="hiddenType-' + fieldNum + '">',
+            '</div>',
+            '<div class="form-group">',
+            '<label class="col-sm-2 control-label" id="fieldLabel">Default value</label>',
+            '<div class="col-sm-3">',
+            '<input type="text" class="form-control" name="default-' + fieldNum + '">',
+            '</div>',
+            '<div class="col-sm-offset-1 col-sm-6" id="hiddenType-' + fieldNum + '">',
+            '</div>',
+            '</div>',
+            '<div class="form-group">',
+            '<label class="col-sm-2 control-label">Required</label>',
+            '<div class="col-sm-3">',
+            '<label class="checkbox-inline">',
+            '<input type="checkbox" name="required-' + fieldNum + '" value=true> check if field is required',
+            '</label>',
+            '</div>',
+            '<label class="col-sm-1 control-label">Unique</label>',
+            '<div class="col-sm-3">',
+            '<label class="checkbox-inline">',
+            '<input type="checkbox" name="unique-' + fieldNum + '" value=true> check if field is unique',
+            '</label>',
+            '</div>',
             '</div>',
             '</div>',
             '</div>']
     jQuery("form").append(dom.join('\n'));
 }
+
 // hide/show divs based on what user selects for field type
 function selectChange(id){
     var val = jQuery("#type-" + id).val()
-    console.log(id, val);
+
     var hidden = jQuery("#hiddenType-" + id);
     if (val == 'fk') {
-        hidden.html('<select class="form-control" name="foreignKey-' + id + '"></select>');
+        var html = '<p>Text for foreign key</p>';
+        html += getFKchoices(id);
+        
+        hidden.html(html);
     } else if (val == 'date') {
         hidden.html('<input type="checkbox" clas="form-control" name="currentDate-' + id + '" value=true> check if you want this field automatically filled with the current date.');
-    } else {
-        hidden.html('');
+    } else if (val == 'varchar') {
+        hidden.html('<p>Text for string field</p>');
+    } else if (val == 'int') {
+        hidden.html('<p>Text for integer field</p>');
+    } else if (val == 'float') {
+        hidden.html('<p>Text for float field</p>');
+    } else if (val == 'timestamp') {
+        hidden.html('<p>Text for timestamp field</p>');
     }
 }
 
@@ -453,18 +465,29 @@ function addTable() {
 
     var data = {
             "action": "addItem", 
-            "dat": {}, // form values
+            "dat": getFormData('form'), // form values
+            "field_num": jQuery('[id^=field-]').length // number of fields
+    }
+    console.log(data);
+
+    // Do a bit of error checking before
+    // we send data to server
+
+    // sensure field names are unique
+    var names = [];
+    for (var i = 1; i <= data.field_num; i++ ) {
+        var field = 'name-' + i;
+        var name = data.dat[field];
+        if (names.indexOf(name) > -1) { // name not unique
+            console.log('Do something here')
+        }        
+        names.push(name);
     }
 
-    data = getFormData('form', data);
  
     // send data to server
-    //doAJAX(data);
+    doAJAX(data);
 
-
-    // do some error checking
-    // table must have at least one unique field (PK)
-    console.log(data)
 }
 
 
@@ -474,29 +497,96 @@ Parameters:
 ===========
 - sel : str
         selector for form (e.g. form)
-- data : obj (optional)
-         if adding to obj, must be or form
-         {'dat':{}}
 
 Returns:
 ========
-- obj : will have a key 'dat' filled with form values
+- obj : will with form input field values
 
 */
-function getFormData(sel, data=null) {
+function getFormData(sel) {
 
-    if (!data) {
-        data = {'dat':{}};
-    }
+    var data = {};
 
     var formData = jQuery(sel).serializeArray(); // form data
+
     jQuery.each(formData, function() {
-        data.dat[this.name] = this.value;
+        data[this.name] = this.value;
     })
 
     return data;
 
 }
+
+
+
+
+
+
+/* Generate a dropdown of possible tables/fields for FK
+
+When setting up a table, a field can be chosen to be
+a foreign key; this will generate a drop down select
+filled with table name and field name from which to
+choose as a reference for the FK
+
+Parameters:
+-----------
+- id : int (optional)
+       if specified, select will get the name 'foreignKey-#',
+       otherwise name will be 'foreignKey'
+
+Returns:
+--------
+- full html for select
+
+
+*/
+function getFKchoices(id=null) {
+
+    // global var db is set in the add_table WP template
+    // NOTE: protected attributes will have a prepended '*' in the key, see:
+    // https://ocramius.github.io/blog/fast-php-object-to-array-conversion/
+    var tables = db['\0*\0tables'];
+    var struct = db['\0*\0struct'];
+
+    var name = 'foreignKey';
+    if (id) {
+        name += '-' + id;
+    }
+
+    var html = '<select class="form-control" name="' + name + '" required>';
+    for (var i = 0; i < tables.length; i++) {
+        var table = tables[i];
+        var tableSafe = table.split('_')[1]; // remove company name
+        var tableStruct = struct[table];
+        var fields = tableStruct['\0*\0fields'];
+
+        for (var j = 0; j < fields.length; j++) {
+            var val = tableSafe + '.' + fields[j];
+            var label = 'Table: ' + tableSafe + ' | Field: ' + fields[j];
+        
+            html += '<option value="' + val + '">' + label + '</option>';
+        }
+
+    }
+    html += '</select>';
+
+    return html;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

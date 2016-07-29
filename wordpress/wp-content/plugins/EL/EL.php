@@ -231,6 +231,15 @@ function editItem_callback() {
     wp_die(); // this is required to terminate immediately and return a proper response
 }
 
+// add table to db
+add_action( 'wp_ajax_addTable', 'addTable_callback' );
+function addTable_callback() {
+
+    echo add_table_to_db(); // defined in server_processing.php
+
+    wp_die(); // this is required to terminate immediately and return a proper response
+}
+
 
 
 /* Generates a dropbown with available values for a foreign key

@@ -154,7 +154,21 @@ class Database {
         print_r($this);
         echo '</pre>';
     }
+
+    public function asJSON() {
+        return json_encode(objectToArray($this));
+    }
+
 }
+
+// http://stackoverflow.com/a/2476954/1153897
+function objectToArray ($object) {
+    if(!is_object($object) && !is_array($object))
+        return $object;
+
+    return array_map('objectToArray', (array) $object);
+}
+
 
 /* Table class defines properties of a given database table
 
