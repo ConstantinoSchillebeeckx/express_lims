@@ -12,7 +12,7 @@ get_header(); ?>
 
             <?php if ( is_user_logged_in() ) { ?>
 
-                <h1><?php the_title(); ?></h1>
+                <h1><?php echo isset($_GET['table']) ? "Viewing table <code>" . $_GET['table'] . "</code>" : the_title(); ?></h1>
 
                 <!-- article -->
                 <article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>

@@ -102,6 +102,7 @@ function exec_query($sql, $conn=null) {
         if (!$res) {
             err_msg("Error running query: " . $sql . '; the error was: ' . $conn->error);
             $conn->close;
+            return false;
         }
     } else {
         return false;
@@ -359,17 +360,21 @@ function delete_item_from_db() {
         }
     }
 
-    // delete row
-    $sql = sprintf("DELETE FROM %s WHERE `%s` = '%s'", $table_full_name, $pk, $id);
-    if (exec_query($sql)) {
-        $msg = sprintf("The item <code>%s</code> was properly archived.", $id);
-        $ret = array("msg" => $msg, "status" => true);
-    }
-
     // update history
     // TODO
 
-    return json_encode($ret);
+    // delete row
+    $sql = sprintf("DELETE FROM %s WHERE `%s` = '%s'", $table_full_name, $pk, $id);
+    $ret = exec_query($sql);
+    if ($ret) {
+        $msg = sprintf("The item <code>%s</code> was properly archived.", $id);
+        $ret = array("msg" => $msg, "status" => true);
+        return json_encode($ret);
+    } else {
+        return json_encode(array("msg"=>"There was an error, please try again", "status"=>false, "log"=>$ret));
+    }
+
+
 }
 
 /* Check if table has value
@@ -576,19 +581,20 @@ function add_table_to_db() {
 
     // construct SQL for table by checking each field
     $has_uid = false; // if table has unique ID
-    $tmp_sql = '';
+    $fields = array();
     for ($i = 1; $i <= $field_num; $i++) {
+        $tmp_sql = '';
         $field_name = $data['name-' . $i];
         $field_default = isset($data['default-' . $i]) ? $data['default-' . $i] : false;
 
         // ensure field name is only alphanumeric
-        if (!preg_match('/^[a-z\s]*$/i', $field_name)) {
-            return json_encode(array("msg" => 'Only alphanumeric characters are allowed in the field name.', "status" => false)); 
+        if (!preg_match('/^[a-z0-9 .\-]+$/i', $field_name)) {
+            return json_encode(array("msg" => "Only letters, numbers and spaces are allowed in the field name; please adjust the field <code>$field_name</code>.", "status" => false)); 
         }
 
         // ensure default field is only alphanumeric
-        if (!preg_match('/^[a-z\s]*$/i', $field_default)) {
-            return json_encode(array("msg" => 'Only alphanumeric characters are allowed as a default value.', "status" => false)); 
+        if ($field_default && !preg_match('/^[a-z0-9 .\-]+$/i', $field_default)) {
+            return json_encode(array("msg" => "Only letters, numbers and spaces are allowed as a default value; please adjust the default value <code>$field_default</code>.", "status" => false));
         }
 
         $field_type = $data['type-' . $i];
@@ -606,7 +612,7 @@ function add_table_to_db() {
             $field_default = false;
         }
 
-        $tmp_sql .= " $field_name $field_type";
+        $tmp_sql .= " `$field_name` $field_type";
 
         $field_required = isset($data['required-' . $i]) ? $data['required-' . $i] : false;
         $field_required ? $tmp_sql .= " NOT NULL" : null;
@@ -617,24 +623,27 @@ function add_table_to_db() {
 
         $field_unique = isset($data['unique-' . $i]) ? $data['unique-' . $i] : false;
         $field_unique ? $tmp_sql .= " UNIQUE" : null;
-   
-
+  
+        array_push($fields, $tmp_sql); 
  
         $field_unique ? $has_uid = true : null; // set flag if unique field found
         if ($i == $field_num && !$has_uid) { // if no field has been set as unique, create one
-            $tmp_sql .= ', UID int NOT NULL PRIMARY KEY';
+            array_push($fields, ' UID int NOT NULL PRIMARY KEY');
         }
 
     
     } 
-    $sql = "CREATE TABLE $table_name ( $tmp_sql )";
+    $sql = "CREATE TABLE $table_name ( " . implode(',', $fields) . " )";
 
     // define string length
     $sql = str_replace("varchar", "varchar(45)", $sql);
 
-    return json_encode(array('msg'=>$sql,'status'=>true, 'log'=>$sql));
+    if (exec_query($sql)) {
+        $msg = sprintf("The table <code>%s</code> was properly created.", $table_name);
+        $ret = array("msg" => $msg, "status" => true);
+    }
 
-    //$ret = exec_query($sql);
+    return json_encode($ret);
 
 }
 

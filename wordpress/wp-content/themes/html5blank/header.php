@@ -54,8 +54,7 @@ if (session_status() == PHP_SESSION_NONE) {
                                 <span class="icon-bar"></span>
                                 <span class="icon-bar"></span>
                               </button>
-                            <a href="<?php echo home_url(); ?>" title="Home">
-                            <img style="margin:5px; width:40px; height:40px;" src="<?php echo get_template_directory_uri(); ?>/img/logo.svg"  alt="Logo" class="logo-img"></img></a>
+                            <a href="<?php echo home_url(); ?>" title="Home"><img style="margin:5px; width:40px; height:40px;" src="<?php echo get_template_directory_uri(); ?>/img/logo.svg"  alt="Logo" class="logo-img"></img></a>
     </div>
 
                         <?php html5blank_nav(); ?>

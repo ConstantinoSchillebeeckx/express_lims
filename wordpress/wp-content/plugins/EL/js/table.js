@@ -318,7 +318,7 @@ function doAJAX(data) {
                 }
             },
             error: function(xhr, status, error) {
-                console.log(xhr);
+                console.log(xhr.responseText);
                 showMsg({"msg":"There ws an error, please try again.", "status": false});
             }
     });
@@ -391,7 +391,7 @@ function addField() {
             '<div class="form-group">',
             '<label class="col-sm-2 control-label" id="fieldLabel">Field name*</label>',
             '<div class="col-sm-3">',
-            '<input type="text" class="form-control" name="name-' + fieldNum + '" required pattern="[a-zA-Z0-9\s]+" title="Letters and number only">',
+            '<input type="text" class="form-control" name="name-' + fieldNum + '" required pattern="[a-zA-Z0-9 ]+" title="Letters, numbers and spaces only">',
             '</div>',
             '<label class="col-sm-1 control-label">Type</label>',
             '<div class="col-sm-2">',
@@ -409,7 +409,7 @@ function addField() {
             '<div class="form-group">',
             '<label class="col-sm-2 control-label" id="fieldLabel">Default value</label>',
             '<div class="col-sm-3">',
-            '<input type="text" class="form-control" name="default-' + fieldNum + '" pattern="[a-zA-Z0-9\s]+" title="Letters and numbers only">',
+            '<input type="text" class="form-control" name="default-' + fieldNum + '" pattern="[a-zA-Z0-9 ]+" title="Letters, numbers and spaces only">',
             '</div>',
             '<div class="col-sm-offset-1 col-sm-6" id="hiddenType-' + fieldNum + '">',
             '</div>',

@@ -15,3 +15,5 @@ each generated table will have an accompanying history table
 - should have same cols as data table
 - should have an extra PK col as primary key
 - notes col
+
+use utf8mb4 encoding for database
