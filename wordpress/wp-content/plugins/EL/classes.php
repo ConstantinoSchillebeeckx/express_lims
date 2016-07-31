@@ -190,7 +190,7 @@ class Table {
         $this->name = $name;
 
         // get list of fields
-        $sql = sprintf("SHOW FIELDS FROM %s", $this->name);
+        $sql = sprintf("SHOW FULL COLUMNS FROM %s", $this->name);
         $results = exec_query($sql);
         $info = array();
         while($row = $results->fetch_assoc()) {
@@ -199,7 +199,8 @@ class Table {
                                            "Null" => $row['Null'],
                                            "Key" => $row['Key'],
                                            "Default" => $row['Default'],
-                                           "Extra" => $row['Extra']
+                                           "Extra" => $row['Extra'],
+                                           "Comment" => $row['Comment']
                                             );
         }
 
@@ -321,6 +322,7 @@ Class properties:
 - default : default value of field
 - extra : any additional information that is available about a given column
 - table : name of table field belongs
+- comment : extra data stored in comment field, e.g. column_format
 */
 class Field {
 
@@ -336,6 +338,7 @@ class Field {
     protected $extra;
     protected $name;
     protected $table;
+    protected $comment;
 
     public function __construct($table, $name, $fks, $info) {
         $this->name = $name;
@@ -343,6 +346,7 @@ class Field {
         $this->key = $info[$name]["Key"];
         $this->default = $info[$name]["Default"];
         $this->extra = $info[$name]["Extra"];
+        $this->comment = json_decode($info[$name]["Comment"], true);
         $this->table = $table;
 
         // check if field is required

@@ -30,6 +30,7 @@ function getData(table, columns, pk, filter) {
 
     jQuery.fn.dataTable.ext.errMode = 'throw'; // Have DataTables throw errors rather than alert() them
 
+
     jQuery('#datatable').DataTable( {
         "processing": true,
         "serverSide": true,
@@ -238,6 +239,7 @@ function addItem() {
             "dat": getFormData('#addItemForm'), // form values
     }
 
+    console.log(data)
  
     // send data to server
     doAJAX(data);

@@ -172,6 +172,7 @@ function get_data_from_db() {
     // DB class
     $db = get_db();
     $table_class = $db->get_table($sTable);
+
       
     /**
      * Paging
@@ -231,8 +232,9 @@ function get_data_from_db() {
         }
     }
 
+
     // User filter
-    if ( isset( $user_filter ) ) {
+    if ( $user_filter !== '' ) {
         $filter_val = $conn->real_escape_string( reset( $user_filter ) );
         $filter_key = $conn->real_escape_string( key ( $user_filter ) );
         if ( empty( $aFilteringRules ) ) {
@@ -247,6 +249,7 @@ function get_data_from_db() {
     } else {
         $sWhere = "";
     }
+
       
       
     /**
@@ -265,7 +268,8 @@ function get_data_from_db() {
     $sQuery = "
         SELECT SQL_CALC_FOUND_ROWS `" . implode("`, `", $aQueryColumns) . "`
         FROM `".$sTable."`".$sWhere.$sOrder.$sLimit;
-    $rResult = exec_query($sQuery, $conn); 
+    $rResult = exec_query($sQuery, $conn);
+    //return $rResult;
       
     // Data set length after filtering
     $sQuery = "SELECT FOUND_ROWS()";
@@ -288,22 +292,25 @@ function get_data_from_db() {
         "aaData"               => array(),
     );
 
+
     // fetch results and do any type of formatting      
-    while ( $aRow = $rResult->fetch_assoc() ) {
-        $row = array();
-        for ( $i=0 ; $i<$iColumnCount ; $i++ ) {
+    if ($rResult->num_rows) {
+        while ( $aRow = $rResult->fetch_assoc() ) {
+            $row = array();
+            for ( $i=0 ; $i<$iColumnCount ; $i++ ) {
+            
+                $col_name = $aColumns[$i];
+                $field = $table_class->get_field( $col_name ); // Field class
         
-            $col_name = $aColumns[$i];
-            $field = $table_class->get_field( $col_name ); // Field class
-    
-            if ( $field->is_pk() ) { // don't format
-                $row[] = $aRow[ $col_name ];
-            } else { // format with filter
-                $url = sprintf("%s&filter=%s,%s", $_SERVER['HTTP_REFERER'], $col_name, $aRow[ $col_name ]);
-                $row[] = '<a href="' . $url . '">' . $aRow[ $col_name ] . '</a>';
+                if ( $field->is_pk() ) { // don't format
+                    $row[] = $aRow[ $col_name ];
+                } else { // format with filter
+                    $url = sprintf("%s&filter=%s,%s", $_SERVER['HTTP_REFERER'], $col_name, $aRow[ $col_name ]);
+                    $row[] = '<a href="' . $url . '">' . $aRow[ $col_name ] . '</a>';
+                }
             }
+            $output['aaData'][] = $row;
         }
-        $output['aaData'][] = $row;
     }
 
     return json_encode( $output );
@@ -431,6 +438,7 @@ function add_item_to_db() {
 
     // ERROR CHECK ITEM
     if ( isset( $table ) && isset( $dat ) ) {
+        $table_class = $db->get_table($table);
         $msg = validate_item_in_table($table, $dat);
 
         if ($msg !== true) {
@@ -459,7 +467,7 @@ function add_item_to_db() {
         $stmt = sprintf('INSERT INTO %s (%s) VALUES (%s)', $table_class->get_full_name(), $cols, $vals);
         $prep = prepare_statement( $stmt, $dat, $table_class);
         if ( $prep ) {
-            return json_encode(array("msg" => sprintf('Item <code>%s</code> successfully added to LIMS.', $dat[$pk]), "status" => true ));
+            return json_encode(array("msg" => sprintf('Item <code>%s</code> successfully added to LIMS.', $dat[$pk]), "status" => true, "log"=>$stmt ));
         } else {
             return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "log" => $prep ));
         }
@@ -586,6 +594,11 @@ function add_table_to_db() {
         $tmp_sql = '';
         $field_name = $data['name-' . $i];
         $field_default = isset($data['default-' . $i]) ? $data['default-' . $i] : false;
+        $field_current = isset($data['currentDate-' . $i]) ? $data['currentDate-' . $i] : false;
+        $field_required = isset($data['required-' . $i]) ? $data['required-' . $i] : false;
+        $field_unique = isset($data['unique-' . $i]) ? $data['unique-' . $i] : false;
+
+        $field_current ? $field_default = true : null;
 
         // ensure field name is only alphanumeric
         if (!preg_match('/^[a-z0-9 .\-]+$/i', $field_name)) {
@@ -598,30 +611,30 @@ function add_table_to_db() {
         }
 
         $field_type = $data['type-' . $i];
-        $field_current = isset($data['currentDate-' . $i]) ? $data['currentDate-' . $i] : false;
 
         // date field type cannot have default current_date,
         // so we change the type to timestamp
         // and leave a note in the comment field
+        $comment = false;
         if ($field_current && $field_type == 'date') {
             $field_type = 'timestamp';
-            $field_default = 'CURRENT_TIMESTAMP';
-            $comment='COMMENT="{\'column_format\': \'date\'}"';
-            $binds[] = $comment;
+            $comment .=' COMMENT \'{"column_format": "date"}\'';
         } elseif ($field_type == 'fk') { // foreign key cannot have a default value
             $field_default = false;
         }
 
         $tmp_sql .= " `$field_name` $field_type";
 
-        $field_required = isset($data['required-' . $i]) ? $data['required-' . $i] : false;
+        if ($comment) {
+            $tmp_sql .= $comment;
+        }
+
         $field_required ? $tmp_sql .= " NOT NULL" : null;
 
         if ($field_default) {
             $field_type == 'timestamp' ? $tmp_sql .= " DEFAULT CURRENT_TIMESTAMP" : $tmp_sql .= " DEFAULT $field_default";
         }
 
-        $field_unique = isset($data['unique-' . $i]) ? $data['unique-' . $i] : false;
         $field_unique ? $tmp_sql .= " UNIQUE" : null;
   
         array_push($fields, $tmp_sql); 
@@ -638,12 +651,16 @@ function add_table_to_db() {
     // define string length
     $sql = str_replace("varchar", "varchar(45)", $sql);
 
-    if (exec_query($sql)) {
+    $res = exec_query($sql);
+    if ($res) {
         $msg = sprintf("The table <code>%s</code> was properly created.", $table_name);
-        $ret = array("msg" => $msg, "status" => true);
+        $ret = array("msg" => $msg, "status" => true, "log"=>$sql);
+        init_db(); // refresh so that table will show up in menu
+        return json_encode($ret);
+    } else {
+        return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false));
     }
 
-    return json_encode($ret);
 
 }
 

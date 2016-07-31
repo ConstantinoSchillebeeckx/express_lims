@@ -106,6 +106,7 @@ function build_table() {
 
 
     $db = get_db();
+    $hidden_fields = explode(',',HIDDEN);
 
     if ( isset( $_GET['table'] ) ) {
         $table = $db->get_company() . "_" . $_GET['table']; // GET should pass safe name of table
@@ -114,8 +115,8 @@ function build_table() {
 
 
     // build filter for use with AJAX
-    $filter = array();
     if ( isset( $_GET['filter'] ) ) {
+        $filter = array();
         $filter_raw = explode( ',', $_GET['filter'] );
         $filter[ $filter_raw[0] ] = $filter_raw[1];
     }
@@ -135,7 +136,7 @@ function build_table() {
         <thead>
         <tr class="info">
 
-        <?php foreach ( $fields as $field ) {
+        <?php foreach ( array_diff($fields, $hidden_fields) as $field ) {
             echo sprintf('<th>%s</th>', $field); 
         } ?>
 
@@ -147,7 +148,7 @@ function build_table() {
         <script type="text/javascript">
             // This will do the AJAX call, func defined in js/table.js
             var table = <?php echo json_encode($table); ?>;
-            var columns = <?php echo json_encode($fields); ?>;
+            var columns = <?php echo json_encode(array_diff($fields,$hidden_fields)); ?>;
             var pk = <?php echo json_encode($db->get_pk($table)); ?>;
             var filter = <?php echo json_encode($filter); ?>;
             getData(table, columns, pk, filter);
@@ -306,10 +307,18 @@ function get_form_table_row($table) {
     $db = get_db();
     $table_class = $db->get_table($table);
     $fields = $table_class->get_fields();
+    $hidden_fields = explode(',', HIDDEN);
 
-    forEach($fields as $field) {
+    forEach(array_diff($fields, $hidden_fields) as $field) {
 
-        $field_class = $db->get_field($table, $field); ?>
+        $field_class = $db->get_field($table, $field);
+        $field_type = $field_class->get_type();
+        if ($field_type == 'float' || $field_type == 'in') {
+            $type = 'number';
+        } else {
+            $type = 'text';
+        }
+        ?>
 
         <div class="form-group">
 
@@ -325,11 +334,11 @@ function get_form_table_row($table) {
                 get_fks_as_select($field_class);
             } else {
                 if ( in_array( $field_class->get_type(), array('timestamp', 'date') ) ) {
-                    echo '<input type="text" id="' . $field . '" name="' . $field . '" class="form-control" disabled><span class="text-muted">This field has been disabled since this field type populates automatically.</span>'; // automatically filled
+                    echo "<input type='$type' id='$field' name='$field' class='form-control disabled><span class='text-muted'>This field has been disabled since this field type populates automatically.</span>";
                 } elseif ($field_class->is_required()) {
-                    echo '<input type="text" id="' . $field . '" name="' . $field . '" class="form-control" required>';
+                    echo "<input type='$type' id='$field' name='$field' class='form-control' required>";
                 } else {
-                    echo '<input type="text" id="' . $field . '" name="' . $field . '" class="form-control">';
+                    echo "<input type='$type' id='$field' name='$field' class='form-control'>";
                 }
             } ?>
 
