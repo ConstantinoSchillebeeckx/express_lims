@@ -300,13 +300,24 @@ function get_data_from_db() {
             for ( $i=0 ; $i<$iColumnCount ; $i++ ) {
             
                 $col_name = $aColumns[$i];
-                $field = $table_class->get_field( $col_name ); // Field class
+                $field_class = $table_class->get_field( $col_name ); // Field class
+                $comment = $field_class->get_comment();
+
+                $val = $aRow[ $col_name ];
+
+                // reformat value if needed
+                if ( $comment && array_key_exists('column_format', $comment) ) {
+                    $output['moo'] = $comment;
+                    if ( $comment['column_format'] == 'date') {
+                        $val = date('Y-m-d', strtotime($val));
+                    }
+                }
         
-                if ( $field->is_pk() ) { // don't format
-                    $row[] = $aRow[ $col_name ];
+                if ( $field_class->is_unique() ) { // don't add filter to unique items since it doesnt make sense to filter them
+                    $row[] = $val;
                 } else { // format with filter
-                    $url = sprintf("%s&filter=%s,%s", $_SERVER['HTTP_REFERER'], $col_name, $aRow[ $col_name ]);
-                    $row[] = '<a href="' . $url . '">' . $aRow[ $col_name ] . '</a>';
+                    $url = sprintf("%s&filter=%s,%s", $_SERVER['HTTP_REFERER'], $col_name, $val );
+                    $row[] = '<a href="' . $url . '">' . $val . '</a>';
                 }
             }
             $output['aaData'][] = $row;
@@ -463,11 +474,14 @@ function add_item_to_db() {
         // prepare statement to add item
         $cols = '`' . implode( '`, `', array_keys($dat) ) . '`';
         $vals = implode(', ', array_pad(array(), count($dat), '?'));
-        $table_class = $db->get_table($table);
         $stmt = sprintf('INSERT INTO %s (%s) VALUES (%s)', $table_class->get_full_name(), $cols, $vals);
-        $prep = prepare_statement( $stmt, $dat, $table_class);
+        $prep = prepare_statement( $stmt, $dat, $types);
         if ( $prep ) {
-            return json_encode(array("msg" => sprintf('Item <code>%s</code> successfully added to LIMS.', $dat[$pk]), "status" => true, "log"=>$stmt ));
+            if ($dat[$pk]) {
+                return json_encode(array("msg" => sprintf('Item <code>%s</code> successfully added to LIMS.', $dat[$pk]), "status" => true, "log"=>$stmt ));
+            } else {
+                return json_encode(array("msg" => 'Item successfully added to LIMS.', "status" => true, "log"=>$stmt ));
+            }
         } else {
             return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "log" => $prep ));
         }
@@ -578,6 +592,7 @@ function add_table_to_db() {
     $data = $_GET['dat'];
     $field_num = $_GET['field_num'];
 
+
     // ensure table name is only letters
     if ( ctype_alpha($data['table_name']) ) {
         $table_name = $db->get_name() . '.' . $db->get_company() . '_' . $data['table_name'];
@@ -639,9 +654,9 @@ function add_table_to_db() {
   
         array_push($fields, $tmp_sql); 
  
-        $field_unique ? $has_uid = true : null; // set flag if unique field found
+        $field_unique && $field_required ? $has_uid = true : null; // set flag if unique field found
         if ($i == $field_num && !$has_uid) { // if no field has been set as unique, create one
-            array_push($fields, ' UID int NOT NULL PRIMARY KEY');
+            array_push($fields, ' UID int NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT \'{"column_format": "hidden"}\'');
         }
 
     
@@ -649,11 +664,12 @@ function add_table_to_db() {
     $sql = "CREATE TABLE $table_name ( " . implode(',', $fields) . " )";
 
     // define string length
-    $sql = str_replace("varchar", "varchar(45)", $sql);
+    $sql = str_replace("varchar", "varchar(4096)", $sql);
+    $sql = str_replace("int", "int(32)", $sql);
 
     $res = exec_query($sql);
     if ($res) {
-        $msg = sprintf("The table <code>%s</code> was properly created.", $table_name);
+        $msg = sprintf("The table <code>%s</code> was properly created.", $data['table_name']);
         $ret = array("msg" => $msg, "status" => true, "log"=>$sql);
         init_db(); // refresh so that table will show up in menu
         return json_encode($ret);
@@ -754,7 +770,6 @@ function validate_item_in_table($table, $dat) {
     $table_class = $db->get_table($table);
     $fields = $table_class->get_fields();
     foreach($fields as $field) {
-
         if (array_key_exists($field, $dat) ) { // only check errors on provided fields in $dat
 
             $field_class = $table_class->get_field($field);
@@ -763,10 +778,13 @@ function validate_item_in_table($table, $dat) {
             if ( $field_class->is_unique() ) {
                 $unique_vals = $field_class->get_unique_vals();
                 $check_val = $dat[$field];
-                if ( in_array( $check_val, $unique_vals ) ) {
+                if ( $unique_vals && in_array( $check_val, $unique_vals ) ) {
                     return sprintf("The field <code>%s</code> is unique and already contains the value <code>%s</code>", $field, $check_val);
                 }
             }
+
+            // TODO validate types (date)
+
 
             // check not null (required) constraint
             if ( $field_class->is_required() ) {

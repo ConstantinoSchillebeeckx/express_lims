@@ -106,7 +106,6 @@ function build_table() {
 
 
     $db = get_db();
-    $hidden_fields = explode(',',HIDDEN);
 
     if ( isset( $_GET['table'] ) ) {
         $table = $db->get_company() . "_" . $_GET['table']; // GET should pass safe name of table
@@ -136,8 +135,15 @@ function build_table() {
         <thead>
         <tr class="info">
 
-        <?php foreach ( array_diff($fields, $hidden_fields) as $field ) {
-            echo sprintf('<th>%s</th>', $field); 
+        <?php $hidden = array();
+            
+        foreach ( $fields as $field ) {
+            $field_class = $table_class->get_field( $field );
+            $comment = $field_class->get_comment();
+            if ($comment && array_key_exists('column_format', $comment) && $comment['column_format'] == 'hidden' ) {
+                $hidden[] = $field;
+            }
+            echo sprintf('<th>%s</th>', $field);
         } ?>
 
         <th>Action</th>
@@ -147,11 +153,12 @@ function build_table() {
 
         <script type="text/javascript">
             // This will do the AJAX call, func defined in js/table.js
-            var table = <?php echo json_encode($table); ?>;
-            var columns = <?php echo json_encode(array_diff($fields,$hidden_fields)); ?>;
-            var pk = <?php echo json_encode($db->get_pk($table)); ?>;
-            var filter = <?php echo json_encode($filter); ?>;
-            getData(table, columns, pk, filter);
+            var table = <?php echo json_encode( $table ); ?>;
+            var columns = <?php echo json_encode( $fields ); ?>;
+            var pk = <?php echo json_encode( $db->get_pk( $table ) ); ?>;
+            var filter = <?php echo json_encode( $filter ); ?>;
+            var hidden = <?php echo json_encode( $hidden ); ?>;
+            getData(table, columns, pk, filter, hidden);
         </script>
 
     <?php } else {
@@ -313,8 +320,12 @@ function get_form_table_row($table) {
 
         $field_class = $db->get_field($table, $field);
         $field_type = $field_class->get_type();
-        if ($field_type == 'float' || $field_type == 'in') {
+        if ( preg_match('/float|int/', $field_type) ) {
             $type = 'number';
+        } elseif ( $field_type == 'date') {
+            $type = 'date';
+        } elseif ( $field_type == 'timestamp') {
+            $type = 'datetime';
         } else {
             $type = 'text';
         }
@@ -333,8 +344,8 @@ function get_form_table_row($table) {
             <?php if ( $field_class->is_fk() ) {  // if field is an fk, show a select dropdown with available values
                 get_fks_as_select($field_class);
             } else {
-                if ( in_array( $field_class->get_type(), array('timestamp', 'date') ) ) {
-                    echo "<input type='$type' id='$field' name='$field' class='form-control disabled><span class='text-muted'>This field has been disabled since this field type populates automatically.</span>";
+                if ( in_array( $field_class->get_type(), array('timestamp', 'date') ) && $field_class->get_default() ) {
+                    echo "<input type='$type' id='$field' name='$field' class='form-control' disabled placeholder='Field has been disabled since it populates automatically'>";
                 } elseif ($field_class->is_required()) {
                     echo "<input type='$type' id='$field' name='$field' class='form-control' required>";
                 } else {

@@ -394,6 +394,11 @@ class Field {
         return $this->is_ref;
     }
 
+    // return the default value
+    public function get_default() {
+        return $this->default;
+    }
+
     // return name of field (e.g. sample)
     public function get_name() {
         return $this->name;
@@ -435,17 +440,22 @@ class Field {
         return in_array($this->key, array('PRI','UNI'));
     }
 
+    // return comment attribute
+    public function get_comment() {
+        return $this->comment;
+    }
+
     // if a field is unique, return the current values
     // of the field, otherwise false
     public function get_unique_vals() {
         if ( $this->is_unique() ) {
-            $sql = sprintf("SELECT DISTINCT(%s) FROM %s.%s", $this->get_name(), DB_NAME_EL, $this->get_table());
+            $sql = sprintf("SELECT DISTINCT(`%s`) FROM %s.%s", $this->get_name(), DB_NAME_EL, $this->get_table());
             $result = exec_query($sql);
             $vals = array();
-            while ($row = $result->fetch_assoc()) {
-                $vals[] = $row[$this->name];
-            }
-            if ( count($vals) > 0 ) {
+            if ($result->num_rows) {
+                while ($row = $result->fetch_assoc()) {
+                    $vals[] = $row[$this->name];
+                }
                 return $vals;
             } else {
                 return false;

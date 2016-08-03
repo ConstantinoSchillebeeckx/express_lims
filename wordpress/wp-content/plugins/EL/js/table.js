@@ -15,10 +15,11 @@ Parameters (set by build_table()):
 - columns : columns in table being queried
 - pk : primary key of table
 - filter : (optional) filter for table in format {col: val}
+- hidden : (optional) array of column names that should be hidden (e.g. UID)
 */
 
 
-function getData(table, columns, pk, filter) {
+function getData(table, columns, pk, filter, hidden) {
 
 
     // html for Action button column
@@ -30,6 +31,34 @@ function getData(table, columns, pk, filter) {
 
     jQuery.fn.dataTable.ext.errMode = 'throw'; // Have DataTables throw errors rather than alert() them
 
+    console.log(table, columns, pk, filter, hidden);
+
+    // variables set with build_table() defined in EL.php
+    var data =  {
+                "action": "viewTable", 
+                "table": table, 
+                "cols": columns,
+                "pk": pk,
+                "filter": filter,
+                }
+
+    var colDefs = [ { // https://datatables.net/examples/ajax/null_data_source.html
+            // set Action column data to empty since we are automatically adding buttons here
+                "targets": -1,
+                "data": null,
+                "defaultContent": buttonHTML,
+                "width": "70px",
+                "orderable": false,
+            }]
+
+    // hide any columns listed in hidden
+    // also make them non-searchable
+    if (hidden.length) {
+        for (var i = 0; i < hidden.length; i++) {
+            var idx = columns.indexOf(hidden[i]);
+            colDefs.push({"targets": [ idx ], "visible": false, "searchable": false })
+        }
+    }
 
     jQuery('#datatable').DataTable( {
         "processing": true,
@@ -37,24 +66,11 @@ function getData(table, columns, pk, filter) {
         "responsive": true,
         "ajax": {
             "url": ajax_object.ajax_url,
-            "data": {
-                "action": "viewTable", 
-                "table": table, 
-                "cols": columns,
-                "pk": pk,
-                "filter": filter,
-                },
+            "data": data,
             },
-        "columnDefs": [
-            // set Action column data to empty since we are automatically adding buttons here
-            { // https://datatables.net/examples/ajax/null_data_source.html
-                "targets": -1,
-                "data": null,
-                "defaultContent": buttonHTML,
-                "width": "20px",
-            }
-        ]
+        "columnDefs": colDefs
     } );
+
 };
 
 
@@ -148,6 +164,7 @@ Parameters:
 */
 function editModal(sel) {
 
+
     // find first col value (PK) of row from button press
     var tr = jQuery(sel).parents("tr");
     var rowIX = tr.index()
@@ -185,6 +202,12 @@ Paramters:
 
 */
 function parseTable(rowIX=null) {
+
+/*
+    var table = jQuery('#datatable').DataTable();
+    console.log( table.row( rowIX ).data() );
+    need to use this so that we can grab UID (hidden field)
+*/
 
     var th = jQuery('#datatable th');
     var dat = [];
