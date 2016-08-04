@@ -171,7 +171,7 @@ function editModal(sel) {
     var cellVal = tr.find('td:first').text();
 
     // get values from row and fill modal
-    var dat = parseTable(rowIX)[0];
+    var dat = parseTable(rowIX);
     originalRowVals = dat; // set to global for comparison to edited values
     for (var col in dat) {
         var cell = dat[col];
@@ -190,7 +190,7 @@ function editModal(sel) {
 
 Instead of querying the DB again, we parse the viewed
 datatable in cases when the edit modal needs to be
-filled in or any unique fields need to be checked
+filled in
 
 Format : [{colname: value}, {colname: value}]
 
@@ -200,31 +200,27 @@ Paramters:
           represents index (0-based) for row requested,
           otherwise returns all rows
 
-*/
-function parseTable(rowIX=null) {
+Returns:
+========
+- obj with column names as keys and row values as value
 
-/*
+
+*/
+function parseTable(rowIX) {
+
     var table = jQuery('#datatable').DataTable();
-    console.log( table.row( rowIX ).data() );
-    need to use this so that we can grab UID (hidden field)
-*/
+    var colData = table.columns().nodes();
+    //need to use this so that we can grab UID (hidden field)
 
-    var th = jQuery('#datatable th');
-    var dat = [];
-    jQuery('table tbody tr').each(function(i, tr){
-        if (rowIX == null || i == rowIX) {
-            var obj = {}
-            tds = jQuery(tr).find('td');
-            th.each(function(index, th){
-                var cell = tds.eq(index).text();
-                var col = jQuery(th).text();
-                if (cell != '') {
-                    obj[col] = cell;
-                }
-            });
-            dat.push(obj)
+    var dat = {};
+    table.columns().every(function(i) { 
+        var col = this.header().textContent;
+        var cellVal = colData[i][rowIX].textContent;
+        if (cellVal) {
+            dat[col] = cellVal;
         }
-    });
+    })
+
     return dat;
 
 }

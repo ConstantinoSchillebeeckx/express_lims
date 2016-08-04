@@ -21,6 +21,7 @@ TODO
 */
 class Database {
 
+
     protected $tables = array(); // array of tables associated with user's company
     protected $struct = array(); // associative array where each table is a key and the value is a class table()
     protected $name = null; // DB name e.g. db215537_EL

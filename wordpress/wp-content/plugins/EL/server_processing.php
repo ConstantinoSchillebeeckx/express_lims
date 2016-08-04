@@ -294,6 +294,8 @@ function get_data_from_db() {
 
 
     // fetch results and do any type of formatting      
+    // such as adding hyper links (used in the front-end for filtering)
+    // or adjusting time zones
     if ($rResult->num_rows) {
         while ( $aRow = $rResult->fetch_assoc() ) {
             $row = array();
@@ -305,9 +307,9 @@ function get_data_from_db() {
 
                 $val = $aRow[ $col_name ];
 
+
                 // reformat value if needed
                 if ( $comment && array_key_exists('column_format', $comment) ) {
-                    $output['moo'] = $comment;
                     if ( $comment['column_format'] == 'date') {
                         $val = date('Y-m-d', strtotime($val));
                     }
@@ -501,7 +503,7 @@ Parameters:
 - $_GET['table']
 - $_GET['pk'] : primary key column
 - $_GET['original_row'] : obj of original row values (key: col name, val: value)
-- $_GET['dat'] : obj of form data (key: col name, val: value)
+- $_GET['dat'] : obj of form data from modal (key: col name, val: value)
 
 */
 function edit_item_in_db() {
@@ -517,8 +519,9 @@ function edit_item_in_db() {
 
         // FIND ITEMS THAT WERE CHANGED
         $edits = array();
-        foreach ($original_row as $field => $original) {
-            $new = $dat[$field];
+        foreach ($dat as $field => $new) {
+            $new == '' ? $new = null : null;
+            $original = $original_row[$field];
             if ($original != $new) {
                 $edits[$field] = $new;
             }
@@ -558,7 +561,7 @@ function edit_item_in_db() {
             $stmt = sprintf('UPDATE %s SET %s WHERE %s', $table_class->get_full_name(), implode(', ', $col_eq), $pk_eq);
             $prep = prepare_statement( $stmt, $edits, $types );
             if ( $prep === true ) {
-                return json_encode(array("msg" => sprintf('Item <code>%s</code> successfully edited.', $pk_val), "status" => true, 'log'=>array($stmt,$edits,$dat, $original_row, $prep))); // TODO cleanup log when finished (for safety)
+                return json_encode(array("msg" => 'Item successfully edited.', "status" => true, 'log'=>array($stmt,$edits,$dat, $original_row, $prep))); // TODO cleanup log when finished (for safety)
             } else {
                 return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, 'log'=>$prep)); // clean up log when finished (for safety)
             }
@@ -647,7 +650,7 @@ function add_table_to_db() {
         $field_required ? $tmp_sql .= " NOT NULL" : null;
 
         if ($field_default) {
-            $field_type == 'timestamp' ? $tmp_sql .= " DEFAULT CURRENT_TIMESTAMP" : $tmp_sql .= " DEFAULT $field_default";
+            $field_type == 'timestamp' ? $tmp_sql .= " DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" : $tmp_sql .= " DEFAULT $field_default";
         }
 
         $field_unique ? $tmp_sql .= " UNIQUE" : null;
@@ -788,7 +791,7 @@ function validate_item_in_table($table, $dat) {
 
             // check not null (required) constraint
             if ( $field_class->is_required() ) {
-                if ( !(array_key_exists($field, $dat) ) ) {
+                if ( !$dat[$field] ) {
                     return sprintf("The field <code>%s</code> is required, please specify a value.", $field);
                 }
             }

@@ -33,25 +33,6 @@ if (function_exists('add_theme_support'))
     add_image_size('small', 120, '', true); // Small Thumbnail
     add_image_size('custom-size', 700, 200, true); // Custom Thumbnail Size call using the_post_thumbnail('custom-size');
 
-    // Add Support for Custom Backgrounds - Uncomment below if you're going to use
-    /*add_theme_support('custom-background', array(
-    'default-color' => 'FFF',
-    'default-image' => get_template_directory_uri() . '/img/bg.jpg'
-    ));*/
-
-    // Add Support for Custom Header - Uncomment below if you're going to use
-    /*add_theme_support('custom-header', array(
-    'default-image'          => get_template_directory_uri() . '/img/headers/default.jpg',
-    'header-text'            => false,
-    'default-text-color'     => '000',
-    'width'                  => 1000,
-    'height'                 => 198,
-    'random-default'         => false,
-    'wp-head-callback'       => $wphead_cb,
-    'admin-head-callback'    => $adminhead_cb,
-    'admin-preview-callback' => $adminpreview_cb
-    ));*/
-
     // Enables post and comment RSS feed links to head
     add_theme_support('automatic-feed-links');
 
@@ -87,6 +68,27 @@ function html5blank_nav()
         )
     );
 
+    $db = get_db(); // plugin function
+
+
+    if (is_user_logged_in()) {
+        $menu .= '<li><a href="/db/">DB</a></li>';
+        $menu .= '<li><a href="/add-table/">Add table</a></li>';
+    }
+
+
+    // automatically generate menu for viewing tables
+    if (is_user_logged_in() && VIEW_TABLE_URL_PATH && $db) { // var defined in plugin config/db.php
+        $menu .= "<li class='dropdown'><a href='#' class='dropdown-toggle' data-toggle='dropdown' role='button' aria-haspopup='true' aria-expanded='false'>View <span class='caret'></span></a>";
+        $menu .= '<ul class="dropdown-menu">';
+        foreach($db->get_tables() as $table) {
+            $safe = explode('_',$table)[1];
+            $menu .= "<li><a href='" . VIEW_TABLE_URL_PATH . "?table=$safe'>$safe</a></li>";
+        }
+        $menu .= '</ul>';
+        $menu .= "</li>";
+    }
+
     // if user is logged in, show a 'log out' menu; otherwise a 'log in' menu
     if (is_user_logged_in()) {
         $menu .= sprintf("<li><a href='%s'>Logout</a></li>", wp_logout_url());
@@ -109,8 +111,6 @@ function html5blank_header_scripts()
     wp_register_script('conditionizr', get_template_directory_uri() . '/js/lib/conditionizr-4.3.0.min.js', array(), '4.3.0');
     wp_enqueue_script('conditionizr');
 
-    //wp_register_script('table', get_template_directory_uri() . '/js/table.js', array('jquery'));
-    //wp_enqueue_script('table');
 
 }
 

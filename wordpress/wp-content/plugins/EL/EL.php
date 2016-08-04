@@ -320,42 +320,47 @@ function get_form_table_row($table) {
 
         $field_class = $db->get_field($table, $field);
         $field_type = $field_class->get_type();
-        if ( preg_match('/float|int/', $field_type) ) {
-            $type = 'number';
-        } elseif ( $field_type == 'date') {
-            $type = 'date';
-        } elseif ( $field_type == 'timestamp') {
-            $type = 'datetime';
-        } else {
-            $type = 'text';
-        }
-        ?>
+        $comment = $field_class->get_comment();
+    
+        if ($comment['column_format'] != 'hidden') {
 
-        <div class="form-group">
-
-            <?php if ($field_class->is_required()) {
-                echo '<label class="col-sm-2 control-label">' . $field . '<span class="required">*</span></label>';
+            if ( preg_match('/float|int/', $field_type) ) {
+                $type = 'number';
+            } elseif ( $field_type == 'date') {
+                $type = 'date';
+            } elseif ( $field_type == 'timestamp') {
+                $type = 'datetime';
             } else {
-                echo '<label class="col-sm-2 control-label">' . $field . '</label>';
-            } ?>
+                $type = 'text';
+            }
+            ?>
 
-            <div class="col-sm-10">
+            <div class="form-group">
 
-            <?php if ( $field_class->is_fk() ) {  // if field is an fk, show a select dropdown with available values
-                get_fks_as_select($field_class);
-            } else {
-                if ( in_array( $field_class->get_type(), array('timestamp', 'date') ) && $field_class->get_default() ) {
-                    echo "<input type='$type' id='$field' name='$field' class='form-control' disabled placeholder='Field has been disabled since it populates automatically'>";
-                } elseif ($field_class->is_required()) {
-                    echo "<input type='$type' id='$field' name='$field' class='form-control' required>";
+                <?php if ($field_class->is_required()) {
+                    echo '<label class="col-sm-2 control-label">' . $field . '<span class="required">*</span></label>';
                 } else {
-                    echo "<input type='$type' id='$field' name='$field' class='form-control'>";
-                }
-            } ?>
+                    echo '<label class="col-sm-2 control-label">' . $field . '</label>';
+                } ?>
 
+                <div class="col-sm-10">
+
+                <?php if ( $field_class->is_fk() ) {  // if field is an fk, show a select dropdown with available values
+                    get_fks_as_select($field_class);
+                } else {
+                    if ( in_array( $field_class->get_type(), array('timestamp', 'date') ) && $field_class->get_default() ) {
+                        echo "<input type='$type' id='$field' name='$field' class='form-control' disabled></input><small class='text-muted'>Field has been disabled since it populates automatically</small>";
+                    } elseif ($field_class->is_required()) {
+                        echo "<input type='$type' id='$field' name='$field' class='form-control' required>";
+                    } else {
+                        echo "<input type='$type' id='$field' name='$field' class='form-control'>";
+                    }
+                } ?>
+
+                </div>
             </div>
-        </div>
-    <?php } ?>
+    <?php    }
+     } ?>
 
     <p class="text-right"><span class="required">*</span> field is required</p>
 <?php }

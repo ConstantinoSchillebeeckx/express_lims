@@ -19,6 +19,7 @@ get_header(); ?>
 
                     <?php 
                         init_db(); // use this instead of get_db() for dev purposes
+
                         $_SESSION['db']->show();
                     ?>
 

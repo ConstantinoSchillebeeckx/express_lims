@@ -17,3 +17,6 @@ each generated table will have an accompanying history table
 - notes col
 
 use utf8mb4 encoding for database
+
+comment object:
+- column_format: hidden, date
