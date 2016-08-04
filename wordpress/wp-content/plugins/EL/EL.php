@@ -118,6 +118,7 @@ function build_table() {
         $filter = array();
         $filter_raw = explode( ',', $_GET['filter'] );
         $filter[ $filter_raw[0] ] = $filter_raw[1];
+        echo "<small class='text-muted'>Table is currently only showing $filter_raw[0] = '$filter_raw[1]'</small>";
     }
 
     // generate table HTML
@@ -125,12 +126,6 @@ function build_table() {
     
         $fields = $db->get_fields($table); ?>
         
-        <div class="row">
-            <div class="col-sm-12">
-                <button class="btn btn-info btn-xs" onclick="addItemModal()">New item</button>
-            </div>   
-        </div>   
-
         <table class="table table-bordered table-hover" id="datatable">
         <thead>
         <tr class="info">
@@ -286,6 +281,12 @@ function get_fks_as_select($field_class) {
 
 
 
+
+
+
+
+
+
 /* Build a form of inputs based on a table row
 
 When either adding a new item or editing a table row item,
@@ -314,9 +315,8 @@ function get_form_table_row($table) {
     $db = get_db();
     $table_class = $db->get_table($table);
     $fields = $table_class->get_fields();
-    $hidden_fields = explode(',', HIDDEN);
 
-    forEach(array_diff($fields, $hidden_fields) as $field) {
+    forEach($fields as $field) {
 
         $field_class = $db->get_field($table, $field);
         $field_type = $field_class->get_type();

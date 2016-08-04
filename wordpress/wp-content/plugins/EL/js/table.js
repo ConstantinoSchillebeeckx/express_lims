@@ -240,6 +240,9 @@ function addItemModal(sel) {
 }
 
 
+
+
+
 /* Function handles form submission from add item modal
 
 When the 'Add item' button is clicked from the modal,

@@ -377,7 +377,7 @@ class Field {
         }
 
         // check if hidden field
-        if (in_array($this->name, explode(",",HIDDEN))) {
+        if ($this->comment['column_format'] == 'hidden') {
             $this->hidden = true;
         } else {
             $this->hidden = false;

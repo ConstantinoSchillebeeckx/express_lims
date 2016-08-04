@@ -22,5 +22,6 @@ define("DEBUG", true); // if false, some erorr message won't be printed, see fun
 //define("HIDDEN","UID"); // comma separated list of general table fields that should be hidden from view
 
 define("VIEW_TABLE_URL_PATH","/view/"); // URL path of view table location (e.g. http://expresslims.com/view/?table=sampleType)
+define("ADD_TABLE_URL_PATH","/add-table/"); // URL path of add table location (e.g. http://expresslims.com/add-table/?table=sampleType)
 
 define("TIMEZONE_OFFSET",-2); // timezone offset w.r.t GMT

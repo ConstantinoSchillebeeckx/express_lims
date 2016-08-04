@@ -16,7 +16,7 @@
 
 
 
-<!-- edit modal -->
+<!-- edit item modal -->
 <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
     <div class="modal-dialog" role="document">
         <div class="modal-content panel-warning">
@@ -37,6 +37,12 @@
         </div>
     </div>
 </div>
+
+
+
+
+
+
 
 
 
@@ -70,7 +76,7 @@
 <!-- add item modal -->
 <div class="modal fade" id="addItemModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
     <div class="modal-dialog" role="document">
-        <div class="modal-content panel-info">
+        <div class="modal-content panel-primary">
             <div class="modal-header panel-heading">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <h4 class="modal-title"><i class="fa fa-plus" aria-hidden="true"></i> Add item</h4>
@@ -81,7 +87,7 @@
                 </div>
                 <div class="modal-footer">
                     <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-                    <button type="submit" class="btn btn-info" id="confirmAddItem">Add item</button>
+                    <button type="submit" class="btn btn-primary" id="confirmAddItem">Add item</button>
                 </div>
             </form>
         </div>
