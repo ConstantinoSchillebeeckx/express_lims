@@ -20,3 +20,8 @@ use utf8mb4 encoding for database
 
 comment object:
 - column_format: hidden, date
+
+
+Databases:
+_EL - stores the live data
+_EL_history - stores the history counterpart to a table that exists in _EL.  table names will be identical to those in _EL except that it will have an additional UID column (if original table doesn't already have a unique key) as well as a 'User' field

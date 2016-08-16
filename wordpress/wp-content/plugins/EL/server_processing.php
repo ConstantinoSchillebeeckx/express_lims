@@ -600,7 +600,7 @@ function add_table_to_db() {
     // ensure table name is only letters
     if (preg_match('/^[a-z0-9-_]+$/i', $data['table_name'])) {
         $table_name = $db->get_name() . '.' . $db->get_company() . '_' . $data['table_name'];
-        $table_name_history = $table_name . '_history';
+        $table_name_history = $db->get_name() . '_history.' . $db->get_company() . '_' . $data['table_name'];
     } else {
         return json_encode(array("msg" => 'Only letters, numbers, underscores and dashes are allowed in the table name.', "status" => false)); 
     }
@@ -675,6 +675,7 @@ function add_table_to_db() {
         if ($i == $field_num) {
 
             array_push($history_fields, $uid_field);  // add a UID field to the history table manually
+            array_push($history_fields, " User varchar(56) NOT NULL"); // add a field for user
 
             if (!$has_uid) { // if no field has been set as unique, create one
                 array_push($fields, $uid_field);
