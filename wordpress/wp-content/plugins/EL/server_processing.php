@@ -595,19 +595,22 @@ function add_table_to_db() {
     $data = $_GET['dat'];
     $field_num = $_GET['field_num'];
 
+    $uid_field = ' UID int NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT \'{"column_format": "hidden"}\''; // unique field for table if needed
 
     // ensure table name is only letters
-    if ( ctype_alpha($data['table_name']) ) {
+    if (preg_match('/^[a-z0-9-_]+$/i', $data['table_name'])) {
         $table_name = $db->get_name() . '.' . $db->get_company() . '_' . $data['table_name'];
+        $table_name_history = $table_name . '_history';
     } else {
-        return json_encode(array("msg" => 'Only letters are allowed in the table name.', "status" => false)); 
+        return json_encode(array("msg" => 'Only letters, numbers, underscores and dashes are allowed in the table name.', "status" => false)); 
     }
 
     $binds = array();
 
     // construct SQL for table by checking each field
     $has_uid = false; // if table has unique ID
-    $fields = array();
+    $fields = array(); // list of fields for table
+    $history_fields = array(); // list of fields for history table counterpart
     for ($i = 1; $i <= $field_num; $i++) {
         $tmp_sql = '';
         $field_name = $data['name-' . $i];
@@ -619,13 +622,13 @@ function add_table_to_db() {
         $field_current ? $field_default = true : null;
 
         // ensure field name is only alphanumeric
-        if (!preg_match('/^[a-z0-9 .\-]+$/i', $field_name)) {
-            return json_encode(array("msg" => "Only letters, numbers and spaces are allowed in the field name; please adjust the field <code>$field_name</code>.", "status" => false)); 
+        if (!preg_match('/^[a-z0-9 .\-_]+$/i', $field_name)) {
+            return json_encode(array("msg" => "Only letters, numbers, spaces, underscores and dashes are allowed in the field name; please adjust the field <code>$field_name</code>.", "status" => false)); 
         }
 
         // ensure default field is only alphanumeric
-        if ($field_default && !preg_match('/^[a-z0-9 .\-]+$/i', $field_default)) {
-            return json_encode(array("msg" => "Only letters, numbers and spaces are allowed as a default value; please adjust the default value <code>$field_default</code>.", "status" => false));
+        if ($field_default && !preg_match('/^[a-z0-9 .\-_]+$/i', $field_default)) {
+            return json_encode(array("msg" => "Only letters, numbers, spaces, underscores and dashes are allowed as a default value; please adjust the default value <code>$field_default</code>.", "status" => false));
         }
 
         $field_type = $data['type-' . $i];
@@ -641,7 +644,17 @@ function add_table_to_db() {
             $field_default = false;
         }
 
-        $tmp_sql .= " `$field_name` $field_type";
+        if ($field_type == 'int') {
+            $tmp_sql .= " `$field_name` int(32)";
+        } else if ($field_type == 'varchar') {
+            if ($field_unique) { // a unique field will create an index which is limited to 767 bytes (191 * 4)
+                $tmp_sql .= " `$field_name` varchar(191)";
+            } else {
+                $tmp_sql .= " `$field_name` varchar(4096)";
+            }
+        } else {
+            $tmp_sql .= " `$field_name` $field_type";
+        }
 
         if ($comment) {
             $tmp_sql .= $comment;
@@ -650,34 +663,39 @@ function add_table_to_db() {
         $field_required ? $tmp_sql .= " NOT NULL" : null;
 
         if ($field_default) {
-            $field_type == 'timestamp' ? $tmp_sql .= " DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" : $tmp_sql .= " DEFAULT $field_default";
+            $field_type == 'timestamp' ? $tmp_sql .= " DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" : $tmp_sql .= " DEFAULT '$field_default'";
         }
 
         $field_unique ? $tmp_sql .= " UNIQUE" : null;
   
         array_push($fields, $tmp_sql); 
+        array_push($history_fields, str_replace(' UNIQUE','', $tmp_sql) ); // only the manually added UID field can be unique
  
         $field_unique && $field_required ? $has_uid = true : null; // set flag if unique field found
-        if ($i == $field_num && !$has_uid) { // if no field has been set as unique, create one
-            array_push($fields, ' UID int NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT \'{"column_format": "hidden"}\'');
+        if ($i == $field_num) {
+
+            array_push($history_fields, $uid_field);  // add a UID field to the history table manually
+
+            if (!$has_uid) { // if no field has been set as unique, create one
+                array_push($fields, $uid_field);
+            }
         }
 
     
     } 
     $sql = "CREATE TABLE $table_name ( " . implode(',', $fields) . " )";
-
-    // define string length
-    $sql = str_replace("varchar", "varchar(4096)", $sql);
-    $sql = str_replace("int", "int(32)", $sql);
+    $sql2 = "CREATE TABLE $table_name_history ( " . implode(',', $history_fields) . " )";
 
     $res = exec_query($sql);
-    if ($res) {
+    $res2 = exec_query($sql2);
+
+    if ($res && $res2) {
         $msg = sprintf("The table <code>%s</code> was properly created.", $data['table_name']);
         $ret = array("msg" => $msg, "status" => true, "log"=>$sql);
         init_db(); // refresh so that table will show up in menu
         return json_encode($ret);
     } else {
-        return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false));
+        return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false, "log"=>array($sql, $sql2)));
     }
 
 

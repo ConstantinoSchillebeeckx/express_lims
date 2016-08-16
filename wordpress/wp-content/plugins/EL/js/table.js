@@ -181,6 +181,7 @@ function editModal(sel) {
 
     jQuery("#editID").html( "<code>" + cellVal + "</code>" ); // set PK message
     jQuery('#editModal').modal('toggle'); // show modal
+    jQuery('#confirmEdit').focus();
 
     jQuery("#confirmEdit").attr("onclick", "editItem('" + cellVal + "')");
 }
@@ -273,7 +274,7 @@ function addItem() {
 
 
 
-/* Function called when use confirms to delete an item
+/* Function called when use confirms to edit an item
 
 Function will make an AJAX call to the server to delete
 the selected item.
@@ -316,11 +317,18 @@ the response as either a message to the user or an error
 message in the console.
 
 Paramters:
+----------
 - data : obj
          data object to send to the server
 
+Returns:
+--------
+- will return true on success, false otherwise
+
 */
 function doAJAX(data) {
+
+    var ajaxStatus;
 
     // send via AJAX to process with PHP
     jQuery.ajax({
@@ -332,7 +340,7 @@ function doAJAX(data) {
                 if (jQuery('#datatable').length) {
                     jQuery('#datatable').DataTable().draw('page'); // refresh table
                 }
-                console.log(response.log);
+                console.log(response);
 
                 // disable autohide of message if certain type of error
                 if (response.msg.indexOf('that you are trying to delete is referenced as a foreign key') > -1) {
@@ -340,14 +348,17 @@ function doAJAX(data) {
                 } else {
                     showMsg(response);
                 }
+
+                ajaxStatus = response['status'];
             },
             error: function(xhr, status, error) {
                 console.log(xhr.responseText);
                 showMsg({"msg":"There ws an error, please try again.", "status": false});
+                ajaxStatus = false;
             }
     });
 
-
+    return ajaxStatus;
 }
 
 
@@ -537,7 +548,11 @@ function addTable() {
 
  
     // send data to server
-    doAJAX(data);
+    var ret = doAJAX(data);
+
+    // TODO add table to dropdown 'view' list manually
+    // ret still not returning proper value due to synchronous processing
+    console.log('ret',ret);
 
 }
 
