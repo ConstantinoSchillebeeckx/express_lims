@@ -320,15 +320,16 @@ Paramters:
 ----------
 - data : obj
          data object to send to the server
+- callback : callback function which will be called with a bool
+             containing the AJAX success/fail response
 
 Returns:
 --------
 - will return true on success, false otherwise
 
 */
-function doAJAX(data) {
+function doAJAX(data, callback) {
 
-    var ajaxStatus;
 
     // send via AJAX to process with PHP
     jQuery.ajax({
@@ -349,16 +350,16 @@ function doAJAX(data) {
                     showMsg(response);
                 }
 
-                ajaxStatus = response['status'];
+                // add table to nav
+                if (data.action == 'addTable' && response['status']) {
+                    addTableToNav(data.dat.table_name);
+                }
             },
             error: function(xhr, status, error) {
                 console.log(xhr.responseText);
                 showMsg({"msg":"There ws an error, please try again.", "status": false});
-                ajaxStatus = false;
             }
     });
-
-    return ajaxStatus;
 }
 
 
@@ -418,9 +419,11 @@ Will add all the necessarry GUI fields for defining a given field
 */
 function addField() {
     fieldNum += 1;
+            //'<button type="button" class="close" data-target="#field-' + fieldNum + '" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>',
     var dom = ['<div class="panel panel-default" style="margin-bottom:40px;" id="field-' + fieldNum + '">',
             '<div class="panel-heading">',
-            '<h3 class="panel-title">Field #' + fieldNum + '</h3>',
+            '<span class="panel-title">Field #' + fieldNum + '</span>',
+            '<button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>',
             '</div>',
             '<div class="panel-body">',
             '<div class="form-group">',
@@ -467,6 +470,26 @@ function addField() {
             '</div>']
     jQuery("form").append(dom.join('\n'));
 }
+
+
+
+
+
+jQuery('#field-1').on('close.bs.alert', function () {
+
+    console.log('here');
+
+})
+
+
+
+
+
+
+
+
+
+
 
 // hide/show divs based on what user selects for field type
 function selectChange(id){
@@ -548,13 +571,28 @@ function addTable() {
 
  
     // send data to server
-    var ret = doAJAX(data);
-
-    // TODO add table to dropdown 'view' list manually
-    // ret still not returning proper value due to synchronous processing
-    console.log('ret',ret);
+    doAJAX(data);
 
 }
+
+
+/* 
+
+If AJAX was successful we need to manually add the table to the
+nav because the page doesn't refresh
+
+Parameters:
+-----------
+- tableName : str
+              safe table name of successfully created table
+
+*/
+function addTableToNav(tableName) {
+
+    jQuery('#view_tables').append('<li><a href="/view/?table=' + tableName + '">' + tableName + '</li>'); // XXX path is hard coded TODO
+
+}
+
 
 // http://stackoverflow.com/a/3886106/1153897
 // NOTE: will return true when checking '1'

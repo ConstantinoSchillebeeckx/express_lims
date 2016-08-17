@@ -1,9 +1,4 @@
 <!doctype html>
-<?php
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
-?>
 <html <?php language_attributes(); ?> class="no-js">
 	<head>
 		<meta charset="<?php bloginfo('charset'); ?>">

@@ -696,7 +696,7 @@ function add_table_to_db() {
         init_db(); // refresh so that table will show up in menu
         return json_encode($ret);
     } else {
-        return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false, "log"=>array($sql, $sql2)));
+        return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false, "log"=>$sql));
     }
 
 

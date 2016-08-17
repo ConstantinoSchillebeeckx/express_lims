@@ -80,7 +80,7 @@ function html5blank_nav()
     // automatically generate menu for viewing tables
     if (is_user_logged_in() && VIEW_TABLE_URL_PATH && $db && $db->get_tables()) { // var defined in plugin config/db.php
         $menu .= "<li class='dropdown'><a href='#' class='dropdown-toggle' data-toggle='dropdown' role='button' aria-haspopup='true' aria-expanded='false'>View <span class='caret'></span></a>";
-        $menu .= '<ul class="dropdown-menu">';
+        $menu .= '<ul class="dropdown-menu" id="view_tables">';
         foreach($db->get_tables() as $table) {
             $safe = explode('_',$table)[1];
             $menu .= "<li><a href='" . VIEW_TABLE_URL_PATH . "?table=$safe'>$safe</a></li>";
@@ -350,6 +350,23 @@ function html5blankcomments($comment, $args, $depth)
     </div>
     <?php endif; ?>
 <?php }
+
+
+// http://silvermapleweb.com/using-the-php-session-in-wordpress/
+add_action('init', 'myStartSession', 1);
+add_action('wp_logout', 'myEndSession');
+add_action('wp_login', 'myEndSession');
+
+function myStartSession() {
+    if(!session_id()) {
+        session_start();
+    }
+}
+
+function myEndSession() {
+    session_destroy();
+}
+
 
 /*------------------------------------*\
     Actions + Filters + ShortCodes

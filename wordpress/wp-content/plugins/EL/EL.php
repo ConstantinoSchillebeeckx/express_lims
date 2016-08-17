@@ -51,7 +51,6 @@ function init_db() {
 
     $comp = get_company();
     if ( isset( $comp ) ) {
-    
         $_SESSION['db'] = new Database( $comp );        
         return true;
 
@@ -157,7 +156,8 @@ function build_table() {
         </script>
 
     <?php } else {
-        echo 'Table doesnt exist';
+        echo 'Table doesn\'t exist; list of available tables are: ' . implode(', ', $db->get_tables());
+        var_dump($_SESSION['db']);
     }
 
     // must be included after table vars are defined
