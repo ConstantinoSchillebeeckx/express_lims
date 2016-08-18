@@ -575,6 +575,62 @@ function edit_item_in_db() {
 
 
 
+
+
+
+/* Function called by AJAX when user attempts to delete table
+
+Will delete the specified table, both the standard and the
+history counterpart.
+
+
+Parameters:
+===========
+- $_GET['dat'] : obj of form data (key: col name, val: value)
+                 at a minimum will have the following keys:
+                 - table_name (safe name)
+*/
+function delete_table_from_db() {
+
+    $data = $_GET['dat'];
+
+    if ( isset($data['table_name']) ) {
+
+        $db = get_db();
+
+        $table = $db->get_name() . '.' . $db->get_company() . '_' . $data['table_name'];
+        $table_history = $db->get_name() . '_history.' . $db->get_company() . '_' . $data['table_name'];
+
+        $sql = "DROP TABLE " . $table;
+        $sql2 = "DROP TABLE " . $table_history;
+
+        $res = exec_query($sql);
+        $res2 = exec_query($sql2);
+
+        if ($res && $res2) {
+            $msg = sprintf("The table <code>%s</code> was properly deleted.", $data['table_name']);
+            $ret = array("msg" => $msg, "status" => true, "log"=>$sql);
+            init_db(); // refreh
+            return json_encode($ret);
+        } else {
+            return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false, "log"=>$sql));
+        }
+
+    } else {
+            return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false, "log"=>$sql));
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
 /* Function called by AJAX when user attempts to add table
 
 

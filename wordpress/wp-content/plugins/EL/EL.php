@@ -243,6 +243,24 @@ function addTable_callback() {
     wp_die(); // this is required to terminate immediately and return a proper response
 }
 
+// add table to db
+add_action( 'wp_ajax_deleteTable', 'deleteTable_callback' );
+function deleteTable_callback() {
+
+    echo delete_table_from_db(); // defined in server_processing.php
+
+    wp_die(); // this is required to terminate immediately and return a proper response
+}
+
+// add table to db
+add_action( 'wp_ajax_editTable', 'editTable_callback' );
+function editTable_callback() {
+
+    echo edit_table(); // defined in server_processing.php
+
+    wp_die(); // this is required to terminate immediately and return a proper response
+}
+
 
 
 /* Generates a dropbown with available values for a foreign key

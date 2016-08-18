@@ -325,7 +325,7 @@ Paramters:
 
 Returns:
 --------
-- will return true on success, false otherwise
+- will display the proper warning/success message to user
 
 */
 function doAJAX(data, callback) {
@@ -344,7 +344,7 @@ function doAJAX(data, callback) {
                 console.log(response);
 
                 // disable autohide of message if certain type of error
-                if (response.msg.indexOf('that you are trying to delete is referenced as a foreign key') > -1) {
+                if (response && response.msg.indexOf('that you are trying to delete is referenced as a foreign key') > -1) {
                     showMsg(response, true);
                 } else {
                     showMsg(response);
@@ -516,6 +516,79 @@ function selectChange(id){
         hidden.html(html);
     }
 }
+
+
+/*
+
+onclick event handler for delete table button called from edit table page
+
+Parameters:
+-----------
+- tableName : str
+              table name (safe name) to be deleted
+
+
+Returns:
+-------
+- will call doAJAX which does all the proper message handling
+
+
+*/
+function deleteTable(tableName) {
+
+    event.preventDefault(); // cancel form submission
+
+    var data = {
+        "action": "deleteTable",
+        "dat": {"table_name": tableName}
+    }
+
+    console.log(data);
+
+
+    // send data to server
+    doAJAX(data);
+
+}
+
+
+
+
+
+
+/*
+
+onclick event handler for edit table button called from edit table page
+
+Parameters:
+-----------
+
+Returns:
+-------
+- will call doAJAX which does all the proper message handling
+
+
+*/
+function editTable() {
+
+    event.preventDefault(); // cancel form submission
+
+    var data = {
+        "action": "editTable",
+        "dat": getFormData('form'),
+    }
+
+    console.log(data);
+
+
+    // send data to server
+    doAJAX(data);
+
+}
+
+
+
+
 
 
 /* Function called when "Create table" button is clicked
