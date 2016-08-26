@@ -71,11 +71,13 @@ function html5blank_nav()
     $db = get_db(); // plugin function
 
 
-    if (is_user_logged_in()) {
+    if (is_user_logged_in() && is_admin()) {
         $menu .= '<li><a href="/db/">DB</a></li>';
-        $menu .= '<li><a href="/add-table/">Add table</a></li>';
     }
 
+    if (is_user_logged_in()) {
+        $menu .= '<li><a href="/add-table/">Add table</a></li>';
+    }
 
     // automatically generate menu for viewing tables
     if (is_user_logged_in() && VIEW_TABLE_URL_PATH && $db && $db->get_tables()) { // var defined in plugin config/db.php
@@ -411,6 +413,7 @@ add_filter('image_send_to_editor', 'remove_width_attribute', 10 ); // Remove wid
 
 // Remove Filters
 remove_filter('the_excerpt', 'wpautop'); // Remove <p> tags from Excerpt altogether
+remove_filter('the_content', 'wpautop');
 
 // Shortcodes
 add_shortcode('html5_shortcode_demo', 'html5_shortcode_demo'); // You can place [html5_shortcode_demo] in Pages, Posts now.

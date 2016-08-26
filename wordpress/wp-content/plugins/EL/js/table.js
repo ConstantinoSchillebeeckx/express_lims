@@ -98,6 +98,25 @@ function deleteModal(sel) {
 }
 
 
+
+
+function deleteTableModal(tableName) {
+
+    console.log(tableName)
+    event.preventDefault(); // cancel form submission
+
+    jQuery("#deleteTableID").html( "<code>" + tableName + "</code>" ); // set PK message
+    jQuery("#confirmDeleteTable").attr("onclick", "deleteTable('" + tableName + "')");
+
+    jQuery('#deleteTableModal').modal('toggle'); // show modal
+
+}
+
+
+
+
+
+
 /* Function called when user confirms to delete an item
 
 Function will make an AJAX call to the server to delete
@@ -368,9 +387,10 @@ function doAJAX(data, callback) {
 // activate modals
 jQuery(document).ready(function($) {
     jQuery('#historyModal').modal({ show: false })
-    jQuery('#editModal').modal({ show: false})
-    jQuery('#deleteModal').modal({ show: false})
-    jQuery('#addItemModal').modal({ show: false})
+    jQuery('#editModal').modal({ show: false })
+    jQuery('#deleteModal').modal({ show: false })
+    jQuery('#deleteTableModal').modal({ show: false })
+    jQuery('#addItemModal').modal({ show: false })
 })
 
 
@@ -570,6 +590,9 @@ Returns:
 
 */
 function editTable() {
+
+    alert("not yet implemented")
+    return;
 
     event.preventDefault(); // cancel form submission
 

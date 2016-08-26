@@ -166,6 +166,11 @@ function build_table() {
 }
 
 
+
+
+
+
+
 /* Helper function for getting DB structure
 
 When called, function will check if DB structure
