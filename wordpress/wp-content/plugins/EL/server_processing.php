@@ -651,7 +651,6 @@ function add_table_to_db() {
     $data = $_GET['dat'];
     $field_num = $_GET['field_num'];
 
-    $uid_field = ' UID int NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT \'{"column_format": "hidden"}\''; // unique field for table if needed
 
     // ensure table name is only letters
     if (preg_match('/^[a-z0-9-_]+$/i', $data['table_name'])) {
@@ -728,7 +727,10 @@ function add_table_to_db() {
         array_push($history_fields, str_replace(' UNIQUE','', $tmp_sql) ); // only the manually added UID field can be unique
  
         $field_unique && $field_required ? $has_uid = true : null; // set flag if unique field found
+
         if ($i == $field_num) {
+
+            $uid_field = ' UID int NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT \'{"column_format": "hidden"}\''; // unique field for table if needed
 
             array_push($history_fields, $uid_field);  // add a UID field to the history table manually
             array_push($history_fields, " User varchar(56) NOT NULL"); // add a field for user

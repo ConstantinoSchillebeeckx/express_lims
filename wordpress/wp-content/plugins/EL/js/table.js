@@ -515,11 +515,21 @@ jQuery('#field-1').on('close.bs.alert', function () {
 function selectChange(id){
     var val = jQuery("#type-" + id).val()
 
+    // reset input fields that were automatically set in case of FK
+    jQuery("[name^=default-]").prop('disabled',false)
+    jQuery("[name^=unique-]").prop('disabled',false)
+
     var hidden = jQuery("#hiddenType-" + id);
     if (val == 'fk') {
         var html = '<p>Text for foreign key</p>';
         html += getFKchoices(id);
         hidden.html(html);
+
+        // a FK cannot have a default nor can it be unique
+        jQuery("[name^=default-]").prop('disabled',true)
+        jQuery("[name^=unique-]").prop('disabled',true)
+        jQuery("[name^=unique-]").prop('checked',false)
+
     } else if (val == 'date') {
         html = '<span>Text for date field</span><br>';
         html +='<input type="checkbox" clas="form-control" name="currentDate-' + id + '"> check if you want this field automatically filled with the date.';
