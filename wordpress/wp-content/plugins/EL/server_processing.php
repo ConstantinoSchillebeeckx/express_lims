@@ -663,9 +663,16 @@ function add_table_to_db() {
     $binds = array();
 
     // construct SQL for table by checking each field
-    $has_uid = false; // if table has unique ID
     $fields = array(); // list of fields for table
     $history_fields = array(); // list of fields for history table counterpart
+
+    // each table will have a UID which acts as a unique identifier for the row
+    $uid_field = ' _UID int NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT \'{"column_format": "hidden"}\''; 
+    $uid_fk = sprintf(' _UID_fk int NOT NULL COMMENT \'{"column_format": "hidden"}\', FOREIGN KEY (_UID_fk) REFERENCES %s.%s(_UID) ON UPDATE CASCADE ON DELETE RESTRICT', $db->get_name(), $db->get_company() . '_' . $data['table_name']); // fk which references original table (links original table to history)
+    array_push($fields, $uid_field);
+    array_push($history_fields, $uid_field); 
+    array_push($history_fields, $uid_fk); 
+
     for ($i = 1; $i <= $field_num; $i++) {
         $tmp_sql = '';
         $field_name = $data['name-' . $i];
@@ -695,8 +702,18 @@ function add_table_to_db() {
         if ($field_current && $field_type == 'date') {
             $field_type = 'timestamp';
             $comment .=' COMMENT \'{"column_format": "date"}\'';
-        } elseif ($field_type == 'fk') { // foreign key cannot have a default value
+        } elseif ($field_type == 'fk') { // foreign key cannot have a default value or be unique
             $field_default = false;
+            $field_unique = false;
+            $fk = explode('.', $data['foreignKey-' . $i]); // name.col of foreign key
+            $fk_table = $db->get_company() . '_' . $fk[0];
+            $fk_col = $fk[1];
+            $field_class = $db->get_field($fk_table, $fk_col);
+            if ($field_class) {
+                $field_type = $field_class->get_type();
+            } else {
+                return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false, "log"=>array($fk_table, $fk_col, $field_class)));
+            }
         }
 
         if ($field_type == 'int') {
@@ -725,19 +742,19 @@ function add_table_to_db() {
   
         array_push($fields, $tmp_sql); 
         array_push($history_fields, str_replace(' UNIQUE','', $tmp_sql) ); // only the manually added UID field can be unique
+
+        // if FK type was requested, add the constraint
+        if ($data['type-' . $i] == 'fk') {
+            $fk_tmp = sprintf("FOREIGN KEY fk_%s(%s) REFERENCES %s(%s)", $field_name, $field_name, $fk_table, $fk_col);
+            array_push($fields, $fk_tmp);
+        }
  
         $field_unique && $field_required ? $has_uid = true : null; // set flag if unique field found
 
         if ($i == $field_num) {
 
-            $uid_field = ' UID int NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT \'{"column_format": "hidden"}\''; // unique field for table if needed
-
-            array_push($history_fields, $uid_field);  // add a UID field to the history table manually
             array_push($history_fields, " User varchar(56) NOT NULL"); // add a field for user
 
-            if (!$has_uid) { // if no field has been set as unique, create one
-                array_push($fields, $uid_field);
-            }
         }
 
     

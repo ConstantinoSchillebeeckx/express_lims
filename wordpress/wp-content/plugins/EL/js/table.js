@@ -633,7 +633,7 @@ function addTable() {
     var data = {
             "action": "addTable", 
             "dat": getFormData('form'), // form values
-            "field_num": jQuery('[id^=field-]').length // number of fields
+            "field_num": fieldNum // number of fields
     }
     console.log(data);
 

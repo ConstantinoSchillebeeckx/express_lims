@@ -37,29 +37,33 @@ class Database {
             // get list of tables
             $sql = "SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '" . DB_NAME_EL . "' AND TABLE_NAME like '" . $this->get_company() . "%'";
             $results = exec_query($sql);
-            while($row = $results->fetch_assoc()) {
-                $this->tables[] = $row["TABLE_NAME"];
-            }
+            if ($results !== true) {
+                while($row = $results->fetch_assoc()) {
+                    $this->tables[] = $row["TABLE_NAME"];
+                }
 
-            // check FKs for table
-            $sql = sprintf("select concat(table_name, '.', column_name) as 'foreign key',  
-            concat(referenced_table_name, '.', referenced_column_name) as 'references'
-            from
-                information_schema.key_column_usage
-            where
-                referenced_table_name is not null
-                and table_schema = '%s' 
-                and table_name like '%s_%%'
-            ", $this->get_name(), $this->get_company());
-            $results = exec_query($sql);
-            $fks = array();
-            while($row = $results->fetch_assoc()) {
-                $fks[$row["foreign key"]] = $row["references"];
-            }
+                // check FKs for table
+                $sql = sprintf("select concat(table_name, '.', column_name) as 'foreign key',  
+                concat(referenced_table_name, '.', referenced_column_name) as 'references'
+                from
+                    information_schema.key_column_usage
+                where
+                    referenced_table_name is not null
+                    and table_schema = '%s' 
+                    and table_name like '%s_%%'
+                ", $this->get_name(), $this->get_company());
+                $results = exec_query($sql);
+                $fks = array();
+                if ($results !== true) {
+                    while($row = $results->fetch_assoc()) {
+                        $fks[$row["foreign key"]] = $row["references"];
+                    }
+                }
 
-            // generate DB structure
-            foreach ($this->tables as $table) {
-                $this->struct[$table] = new Table($table, $fks);
+                // generate DB structure
+                foreach ($this->tables as $table) {
+                    $this->struct[$table] = new Table($table, $fks);
+                }
             }
         }
     }
