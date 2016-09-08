@@ -43,11 +43,14 @@ get_header(); ?>
 
 
                     <script  type="text/javascript">
-                        db = <?php echo get_db()->asJSON(); // send DB to javascript var ?>
+                        var tmp = <?php echo get_db()->asJSON(); // send DB to javascript var ?>;
+                        db = cleanDB(tmp);
 
                         jQuery(function() { // automatically add the first field
                             jQuery('#add_field').click();
                         });
+
+
                     </script>
 
                 </article>

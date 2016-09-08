@@ -773,10 +773,7 @@ Returns:
 function getFKchoices(id=null) {
 
     // global var db is set in the add_table WP template
-    // NOTE: protected attributes will have a prepended '*' in the key, see:
-    // https://ocramius.github.io/blog/fast-php-object-to-array-conversion/
-    var tables = db['\0*\0tables'];
-    var struct = db['\0*\0struct'];
+    var struct = db['struct'];
 
     var name = 'foreignKey';
     if (id) {
@@ -784,17 +781,20 @@ function getFKchoices(id=null) {
     }
 
     var html = '<select class="form-control" name="' + name + '" required>';
-    for (var i = 0; i < tables.length; i++) {
-        var table = tables[i];
+    for (var i in db['tables']) {
+        var table = db['tables'][i];
         var tableSafe = table.split('_')[1]; // remove company name
         var tableStruct = struct[table];
-        var fields = tableStruct['\0*\0fields'];
-
-        for (var j = 0; j < fields.length; j++) {
-            var val = tableSafe + '.' + fields[j];
-            var label = 'Table: ' + tableSafe + ' | Field: ' + fields[j];
+        var fieldStruct = tableStruct['struct'];
         
-            html += '<option value="' + val + '">' + label + '</option>';
+        for (var j in tableStruct['fields']) {
+            var field = tableStruct['fields'][j];
+            if ( fieldStruct[field]['hidden'] == false) {
+                var val = tableSafe + '.' + field;
+                var label = 'Table: ' + tableSafe + ' | Field: ' + field;
+            
+                html += '<option value="' + val + '">' + label + '</option>';
+            }
         }
 
     }

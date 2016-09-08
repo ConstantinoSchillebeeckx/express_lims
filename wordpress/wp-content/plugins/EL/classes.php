@@ -161,7 +161,7 @@ class Database {
     }
 
     public function asJSON() {
-        return json_encode(objectToArray($this));
+        return json_encode(objectToArray($this)) . ';'; // ';' so that JS doesn't complain
     }
 
 }

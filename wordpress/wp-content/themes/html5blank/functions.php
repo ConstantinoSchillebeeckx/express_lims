@@ -113,6 +113,8 @@ function html5blank_header_scripts()
     wp_register_script('conditionizr', get_template_directory_uri() . '/js/lib/conditionizr-4.3.0.min.js', array(), '4.3.0');
     wp_enqueue_script('conditionizr');
 
+    wp_register_script('scripts', get_template_directory_uri() . '/js/scripts.js');
+    wp_enqueue_script('scripts');
 
 }
 
