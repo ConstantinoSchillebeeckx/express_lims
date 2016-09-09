@@ -20,24 +20,28 @@
 # NOTES
 
 it is assumed that each person that logs in has an associated 'company'
-stored in the user_meta table.  this is used to check a subset of all
+stored as part of their use meta (site is WP).  this is used to check a subset of all
 tables within the EL database
 
-all express lims data is stored in (a single) database _EL
+all express lims data is stored in two databases EL & EL_history
 
 each company will have data tables prepended with their company name e.g. matatu_ (always all lowercase)
 
 each generated table will have an accompanying history table
 
+use utf8mb4 encoding for database
+
+
 ### Data table
 - should at least have a timestamp field and a 'User' field
+- automatically gets a 'UID' column that uniquely defines that data item; has extra column meta as 'hidden' data type
 
 ### History table
 - should have same cols as data table
-- should have an extra PK col as primary key
-- notes col
+- has addition user column
+- has UID column (like Data table above)
+- has UID_fk column which serves as the key to tie data item to _history table
 
-use utf8mb4 encoding for database
 
 comment object:
 - column_format: hidden, date
