@@ -346,7 +346,7 @@ update history.  AJAX call made by deleteItem() in
 js/table.js
 
 Parameters:
-- $_GET['id'] : name of the item being deleted
+- $_GET['id'] : id of the item being deleted
 - $_GET['table'] : name of table in which item is located
 - $_GET['pk'] : column in which item exists
 
@@ -390,7 +390,7 @@ function delete_item_from_db() {
     $sql = sprintf("DELETE FROM %s WHERE `%s` = '%s'", $table_full_name, $pk, $id);
     $ret = exec_query($sql);
     if ($ret) {
-        $msg = sprintf("The item <code>%s</code> was properly archived.", $id);
+        $msg = sprintf("The item was properly archived.");
         $ret = array("msg" => $msg, "status" => true, "log"=>$sql);
         return json_encode($ret);
     } else {

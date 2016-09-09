@@ -84,17 +84,22 @@ of the first column item and update the modal with
 its value.  It will then display the modal as well as
 set the proper onclick event for the confirm delete button
 
+Function assumes that the first column of the databale is
+the hidden _UID - this will be used to identify which
+item to delete.
+
 Parameters:
 - sel : will be the 'a' selection of the button that was clicked
 
 */
 function deleteModal(sel) {
 
-    // find first col value (PK) of row from button press
-    var val = jQuery(sel).parents("tr").find(">:first-child").text()
-    jQuery("#deleteID").html( "<code>" + val + "</code>" ); // set PK message
+    var rowNum = jQuery(sel).closest('tr').index();
+    var dat = jQuery('#datatable').DataTable().row(rowNum).data();
+
+    jQuery("#deleteID").html( "<code>" + dat[1] + "</code>" ); // set PK message
     jQuery('#deleteModal').modal('toggle'); // show modal
-    jQuery("#confirmDelete").attr("onclick", "deleteItem('" + val + "')");
+    jQuery("#confirmDelete").attr("onclick", "deleteItem('" + dat[0] + "')");
 }
 
 
