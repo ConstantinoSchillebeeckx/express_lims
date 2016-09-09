@@ -94,6 +94,7 @@ Parameters:
 */
 function deleteModal(sel) {
 
+    // lookup data for the row that was selected by button click
     var rowNum = jQuery(sel).closest('tr').index();
     var dat = jQuery('#datatable').DataTable().row(rowNum).data();
 
@@ -189,13 +190,13 @@ Parameters:
 function editModal(sel) {
 
 
-    // find first col value (PK) of row from button press
-    var tr = jQuery(sel).parents("tr");
-    var rowIX = tr.index()
-    var cellVal = tr.find('td:first').text();
+    // lookup data for the row that was selected by button click
+    var rowNum = jQuery(sel).closest('tr').index();
+    var cellVal = jQuery('#datatable').DataTable().row(rowNum).data()[1];
+
 
     // get values from row and fill modal
-    var dat = parseTable(rowIX);
+    var dat = parseTableRow(rowNum);
     originalRowVals = dat; // set to global for comparison to edited values
     for (var col in dat) {
         var cell = dat[col];
@@ -231,7 +232,7 @@ Returns:
 
 
 */
-function parseTable(rowIX) {
+function parseTableRow(rowIX) {
 
     var table = jQuery('#datatable').DataTable();
     var colData = table.columns().nodes();
@@ -255,12 +256,8 @@ function parseTable(rowIX) {
 
 
 /* Function called when add row button history clicked
-
-Parameters:
-- sel : will be the 'a' selection of the button that was clicked
-
 */
-function addItemModal(sel) {
+function addItemModal() {
     jQuery('#addItemModal').modal('toggle'); // show modal
 }
 
@@ -344,15 +341,13 @@ Paramters:
 ----------
 - data : obj
          data object to send to the server
-- callback : callback function which will be called with a bool
-             containing the AJAX success/fail response
 
 Returns:
 --------
 - will display the proper warning/success message to user
 
 */
-function doAJAX(data, callback) {
+function doAJAX(data) {
 
 
     // send via AJAX to process with PHP
@@ -459,12 +454,12 @@ function addField() {
             '<label class="col-sm-1 control-label">Type</label>',
             '<div class="col-sm-2">',
             '<select class="form-control" onChange="selectChange(' + fieldNum + ')" id="type-' + fieldNum + '" name="type-' + fieldNum + '" required>',
-            '<option value="" disabled selected style="display:none;">Choose</option>',
+            '<option value="" disabled selected style="display:none;"></option>',
             '<option value="varchar">String</option>',
             '<option value="int">Integer</option>',
             '<option value="float">Float</option>',
             '<option value="date">Date</option>',
-            '<option value="timestamp">Date & Time</option>',
+            '<option value="datetime">Date & Time</option>',
             '<option value="fk">Foreign</option>',
             '</select>',
             '</div>',
@@ -536,18 +531,18 @@ function selectChange(id){
         jQuery("[name^=unique-]").prop('checked',false)
 
     } else if (val == 'date') {
-        html = '<span>Text for date field</span><br>';
-        html +='<input type="checkbox" clas="form-control" name="currentDate-' + id + '"> check if you want this field automatically filled with the date.';
+        html = '<span>A date field is used for values with a date part but no time part; it is stored in the format <em>YYYY-MM-DD</em> and there fore can only contain numbers and dashes, for example <code>2015-03-24</code>. </span><br>';
+        html +='<input type="checkbox" clas="form-control" name="currentDate-' + id + '"> check if you want this field automatically filled with the date at the time of editing.';
         hidden.html(html);
     } else if (val == 'varchar') {
-        hidden.html('<p>Text for string field</p>');
+        hidden.html('<p>A string field can be contain letters, numbers and various other characters such as commas or dashes.</p>');
     } else if (val == 'int') {
-        hidden.html('<p>Text for integer field</p>');
+        hidden.html('<p>An integer field can only contain whole numbers such as <code>4321</code>.</p>');
     } else if (val == 'float') {
-        hidden.html('<p>Text for float field</p>');
-    } else if (val == 'timestamp') {
-        html = '<span>Text for timestamp field</span><br>';
-        html +='<input type="checkbox" clas="form-control" name="currentDate-' + id + '"> check if you want this field automatically filled with the date & time.';
+        hidden.html('<p>A float field can only contain numbers as well as a decimal point, for example <code>89.45</code></p>');
+    } else if (val == 'datetime') {
+        html = '<span>A date time field is used is used for values that contain both date and time parts, it is stored in the format <em>YYYY-MM-DD HH:MM:SS</em>, for example <code>2023-01-19 03:14:07</code></span><br>';
+        html +='<input type="checkbox" clas="form-control" name="currentDate-' + id + '"> check if you want this field automatically filled with the date & time at editing';
         hidden.html(html);
     }
 }
@@ -634,58 +629,61 @@ function editTable() {
 function addTable() {
     
     event.preventDefault(); // cancel form submission
+    jQuery('#submit_handle').click(); // needed to validate form
 
-    var data = {
-            "action": "addTable", 
-            "dat": getFormData('form'), // form values
-            "field_num": fieldNum // number of fields
-    }
-    console.log(data);
-
-
-
-    // ensure table doesn't exist
-    // global var db is set in the add_table WP template
-    // NOTE: protected attributes will have a prepended '*' in the key, see:
-    // https://ocramius.github.io/blog/fast-php-object-to-array-conversion/
-    for (var i in db['tables']) {
-        var table = db['tables'][i];
-        var table_safe = table.split('_')[1];
-        if (table_safe.toLowerCase() == data.dat.table_name.toLowerCase()) {
-            showMsg({'msg':'Table name <code>' + table_safe + '</code> already exists, please choose another.', 'status':false});
-            return;
+    if (jQuery('form')[0].checkValidity()) { // if valid, load
+        var data = {
+                "action": "addTable", 
+                "dat": getFormData('form'), // form values
+                "field_num": fieldNum // number of fields
         }
-    }
+        console.log(data);
 
-    var names = [];
-    for (var i = 1; i <= data.field_num; i++ ) {
 
-        // sensure field names are unique
-        var field = 'name-' + i;
-        var name = data.dat[field];
-        if (names.indexOf(name) > -1) { // name not unique
-            showMsg({'msg':'All column names must be unique, <code>' + name + '</code> given multiple times.', 'status':false});
-            return;
-        }        
-        names.push(name);
 
-        // check that default value matches with field type
-        var defaultVal = data.dat['default-' + i];
-        if (defaultVal) {
-            var type = data.dat['type-' + i];
-            if ( type == 'float' && !(isFloat(defaultVal) || isInt(defaultVal)) ) {
-                showMsg({'msg':'If specifying a float type for the column <code>' + name + '</code>, please ensure the default value is a float value.', 'status':false});
-                return;
-            } else if ( type == 'int' && !isInt(defaultVal) ) {
-                showMsg({'msg':'If specifying an integer type for the column <code>' + name + '</code>, please ensure the default value is an integer.', 'status':false});
+        // ensure table doesn't exist
+        // global var db is set in the add_table WP template
+        // NOTE: protected attributes will have a prepended '*' in the key, see:
+        // https://ocramius.github.io/blog/fast-php-object-to-array-conversion/
+        for (var i in db['tables']) {
+            var table = db['tables'][i];
+            var table_safe = table.split('_')[1];
+            if (table_safe.toLowerCase() == data.dat.table_name.toLowerCase()) {
+                showMsg({'msg':'Table name <code>' + table_safe + '</code> already exists, please choose another.', 'status':false});
                 return;
             }
         }
-    }
 
- 
-    // send data to server
-    doAJAX(data);
+        var names = [];
+        for (var i = 1; i <= data.field_num; i++ ) {
+
+            // sensure field names are unique
+            var field = 'name-' + i;
+            var name = data.dat[field];
+            if (names.indexOf(name) > -1) { // name not unique
+                showMsg({'msg':'All column names must be unique, <code>' + name + '</code> given multiple times.', 'status':false});
+                return;
+            }        
+            names.push(name);
+
+            // check that default value matches with field type
+            var defaultVal = data.dat['default-' + i];
+            if (defaultVal) {
+                var type = data.dat['type-' + i];
+                if ( type == 'float' && !(isFloat(defaultVal) || isInt(defaultVal)) ) {
+                    showMsg({'msg':'If specifying a float type for the column <code>' + name + '</code>, please ensure the default value is a float value.', 'status':false});
+                    return;
+                } else if ( type == 'int' && !isInt(defaultVal) ) {
+                    showMsg({'msg':'If specifying an integer type for the column <code>' + name + '</code>, please ensure the default value is an integer.', 'status':false});
+                    return;
+                }
+            }
+        }
+
+     
+        // send data to server
+        doAJAX(data);
+    }
 
 }
 

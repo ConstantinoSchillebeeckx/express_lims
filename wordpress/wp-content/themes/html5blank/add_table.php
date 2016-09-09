@@ -39,6 +39,7 @@ get_header(); ?>
                           }?>
                         </div>
                       </div>
+                      <input id="submit_handle" type="submit" style="display: none"> <!-- needed for validating form -->
                     </form>
 
 

@@ -318,7 +318,7 @@ table field.  This function will generate a form that has
 proper inputs for each of these fields.  If the field is
 an FK, a select will be generated, otherwise an input
 box is shown.  For any field that is automatically populated
-(e.g. timestamp), the input will be disabled and a note will
+(e.g. datetime), the input will be disabled and a note will
 be displayed.
 
 Parameters:
@@ -351,7 +351,7 @@ function get_form_table_row($table) {
                 $type = 'number';
             } elseif ( $field_type == 'date') {
                 $type = 'date';
-            } elseif ( $field_type == 'timestamp') {
+            } elseif ( $field_type == 'datetime') {
                 $type = 'datetime';
             } else {
                 $type = 'text';
@@ -371,7 +371,7 @@ function get_form_table_row($table) {
                 <?php if ( $field_class->is_fk() ) {  // if field is an fk, show a select dropdown with available values
                     get_fks_as_select($field_class);
                 } else {
-                    if ( in_array( $field_class->get_type(), array('timestamp', 'date') ) && $field_class->get_default() ) {
+                    if ( in_array( $field_class->get_type(), array('datetime', 'date') ) && $field_class->get_default() ) {
                         echo "<input type='$type' id='$field' name='$field' class='form-control' disabled></input><small class='text-muted'>Field has been disabled since it populates automatically</small>";
                     } elseif ($field_class->is_required()) {
                         echo "<input type='$type' id='$field' name='$field' class='form-control' required>";

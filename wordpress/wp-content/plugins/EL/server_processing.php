@@ -505,7 +505,7 @@ Parameters:
 ===========
 - $_GET['table']
 - $_GET['pk'] : primary key column
-- $_GET['original_row'] : obj of original row values (key: col name, val: value)
+- $_GET['original_row'] : obj of original row values (key: col name, val: value) [including hidden cols]
 - $_GET['dat'] : obj of form data from modal (key: col name, val: value)
 
 */
@@ -538,15 +538,10 @@ function edit_item_in_db() {
                 return json_encode(array("msg" => $msg, "status" => false, 'log'=>array($edits,$dat,$original_row)));
             }
 
-            $table_class = $db->get_table($table);
-            $pk_eq = sprintf("`%s` = '%s'", $pk, $pk_val);
-            $col_eq = array();
-            foreach ($edits as $col => $val) {
-                $col_eq[] .= "`" . $col . "`= ?";
-            }
 
             // check field type and enforce
             $types = '';
+            $table_class = $db->get_table($table);
             foreach($edits as $field => $field_val) {
                 $field_class = $table_class->get_field($field);
                 $type = $field_class->get_type();
@@ -561,12 +556,17 @@ function edit_item_in_db() {
             }
 
             // prepare statement to add item
+            $pk_eq = sprintf("`%s` = '%s'", $pk, $pk_val);
+            $col_eq = array();
+            foreach ($edits as $col => $val) {
+                $col_eq[] .= "`" . $col . "`= ?";
+            }
             $stmt = sprintf('UPDATE %s SET %s WHERE %s', $table_class->get_full_name(), implode(', ', $col_eq), $pk_eq);
             $prep = prepare_statement( $stmt, $edits, $types );
             if ( $prep === true ) {
                 return json_encode(array("msg" => 'Item successfully edited.', "status" => true, 'log'=>array($stmt,$edits,$dat, $original_row, $prep))); // TODO cleanup log when finished (for safety)
             } else {
-                return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, 'log'=>$prep)); // clean up log when finished (for safety)
+                return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, 'log'=>array($prep, $edits, $original_row))); // clean up log when finished (for safety)
             }
         } else {
             return json_encode(array("msg" => 'Values are not any different than current ones, nothing was edited.', "status" => true));
@@ -703,7 +703,7 @@ function add_table_to_db() {
         // and leave a note in the comment field
         $comment = false;
         if ($field_current && $field_type == 'date') {
-            $field_type = 'timestamp';
+            $field_type = 'datetime';
             $comment .=' COMMENT \'{"column_format": "date"}\'';
         } elseif ($field_type == 'fk') { // foreign key cannot have a default value or be unique
             $field_default = false;
@@ -738,7 +738,7 @@ function add_table_to_db() {
         $field_required ? $tmp_sql .= " NOT NULL" : null;
 
         if ($field_default) {
-            $field_type == 'timestamp' ? $tmp_sql .= " DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" : $tmp_sql .= " DEFAULT '$field_default'";
+            $field_type == 'datetime' ? $tmp_sql .= " DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" : $tmp_sql .= " DEFAULT '$field_default'";
         }
 
         $field_unique ? $tmp_sql .= " UNIQUE" : null;
