@@ -124,9 +124,12 @@ function exec_query($sql, $conn=null) {
 /* Process data from AJAX call
 
 Function is called every time an AJAX call is 
-made for data for viewing the DB.  This is done
+made on data for viewing the DB.  This is done
 when the function build_table() is called [in
-EL.php]
+EL.php]. 
+
+This is the function that properly parses and sends
+data back for use with datatables.net JS.
 
 Function assumes that the following are passed:
 - $_GET['table']
@@ -388,7 +391,7 @@ function delete_item_from_db() {
     $ret = exec_query($sql);
     if ($ret) {
         $msg = sprintf("The item <code>%s</code> was properly archived.", $id);
-        $ret = array("msg" => $msg, "status" => true);
+        $ret = array("msg" => $msg, "status" => true, "log"=>$sql);
         return json_encode($ret);
     } else {
         return json_encode(array("msg"=>"There was an error, please try again", "status"=>false, "log"=>$ret));

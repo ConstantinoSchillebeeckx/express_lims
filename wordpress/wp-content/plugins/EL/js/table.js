@@ -91,7 +91,7 @@ Parameters:
 function deleteModal(sel) {
 
     // find first col value (PK) of row from button press
-    var val = jQuery(sel).parents("tr").find(">:first-child").html()
+    var val = jQuery(sel).parents("tr").find(">:first-child").text()
     jQuery("#deleteID").html( "<code>" + val + "</code>" ); // set PK message
     jQuery('#deleteModal').modal('toggle'); // show modal
     jQuery("#confirmDelete").attr("onclick", "deleteItem('" + val + "')");
