@@ -648,12 +648,12 @@ function addTable() {
     // global var db is set in the add_table WP template
     // NOTE: protected attributes will have a prepended '*' in the key, see:
     // https://ocramius.github.io/blog/fast-php-object-to-array-conversion/
-    var tables = db['\0*\0tables'];
-    for (var i = 0; i < tables.length; i++) {
-        var table = tables[i];
+    for (var i in db['tables']) {
+        var table = db['tables'][i];
         var table_safe = table.split('_')[1];
         if (table_safe.toLowerCase() == data.dat.table_name.toLowerCase()) {
-            alert('need an error message here about table existing'); // TODO
+            showMsg({'msg':'Table name <code>' + table_safe + '</code> already exists, please choose another.', 'status':false});
+            return;
         }
     }
 
@@ -664,7 +664,8 @@ function addTable() {
         var field = 'name-' + i;
         var name = data.dat[field];
         if (names.indexOf(name) > -1) { // name not unique
-            alert('need an error message here about field names not being unique'); // TODO
+            showMsg({'msg':'All column names must be unique, <code>' + name + '</code> given multiple times.', 'status':false});
+            return;
         }        
         names.push(name);
 
@@ -673,9 +674,11 @@ function addTable() {
         if (defaultVal) {
             var type = data.dat['type-' + i];
             if ( type == 'float' && !(isFloat(defaultVal) || isInt(defaultVal)) ) {
-                alert("need an error message here about default value not being a float");
+                showMsg({'msg':'If specifying a float type for the column <code>' + name + '</code>, please ensure the default value is a float value.', 'status':false});
+                return;
             } else if ( type == 'int' && !isInt(defaultVal) ) {
-                alert("need an error message here about default value not being an int");
+                showMsg({'msg':'If specifying an integer type for the column <code>' + name + '</code>, please ensure the default value is an integer.', 'status':false});
+                return;
             }
         }
     }
