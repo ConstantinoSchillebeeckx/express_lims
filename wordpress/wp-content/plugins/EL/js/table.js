@@ -579,6 +579,7 @@ function deleteTable(tableName) {
     // send data to server
     doAJAX(data);
 
+    jQuery('#deleteTableModal').modal('toggle'); // hide modal
 }
 
 
@@ -605,6 +606,7 @@ function editTable() {
     return;
 
     event.preventDefault(); // cancel form submission
+    jQuery('#submit_handle').click(); // needed to validate form
 
     var data = {
         "action": "editTable",

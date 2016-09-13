@@ -13,8 +13,27 @@ get_header(); ?>
             <?php if ( is_user_logged_in() ) { ?>
 
                 <?php if (isset($_GET['table'])) {
-                    echo "<h1>Edit table <code>" . $_GET['table'] . "</code></h1>";
-                } else {
+                    echo "<h1>Edit table <code>" . $_GET['table'] . "</code></h1>"; ?>
+
+                    <!-- delete table modal -->
+                    <div class="modal fade" id="deleteTableModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                      <div class="modal-dialog" role="document">
+                        <div class="modal-content panel-danger">
+                          <div class="modal-header panel-heading">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title"><i class="fa fa-times" aria-hidden="true"></i> Delete table</h4>
+                          </div>
+                          <div class="modal-body">
+                            Are you sure you want to delete the table <code><?php echo $_GET['table']; ?></code>? <br><br><strong>Note:</strong> you cannot undo this.
+                          </div>
+                          <div class="modal-footer">
+                            <a href="#" class="btn" data-dismiss="modal">Cancel</a>
+                            <button type="button" class="btn btn-danger" id="confirmDeleteTable">Delete table</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                <?php } else {
                     echo '<h1>Add table</h1>';
                 }?>
 
@@ -32,8 +51,8 @@ get_header(); ?>
                         </div>
                         <div class="col-sm-offset-4 col-sm-2">
                           <?php if (isset($_GET['table'])) {
-                            echo '<div class="pull-right btn-group"><button type="submit" class="btn btn-success" onclick="editTable()">Save table</button>';
-                            echo '<button class="btn btn-danger" type="submit"><i class="fa fa-times" aria-hidden="true" onclick="deleteTableModal(\'' . $_GET['table'] . '\')"></i></button></div>';
+                            echo '<div class="pull-right btn-group"><button class="btn btn-success" onclick="editTable()">Save table</button>';
+                            echo '<button class="btn btn-danger"><i class="fa fa-times" aria-hidden="true" onclick="deleteTableModal(\'' . $_GET['table'] . '\')"></i></button></div>';
                           } else {
                             echo '<button class="btn pull-right btn-success" onclick="addTable()">Create table</button>';
                           }?>
@@ -57,7 +76,6 @@ get_header(); ?>
                 </article>
                 <!-- /article -->
 
-                <?php echo include_once( WP_PLUGIN_DIR . '/EL/modals.php' ); ?>
 
                 
             <?php } else { ?>

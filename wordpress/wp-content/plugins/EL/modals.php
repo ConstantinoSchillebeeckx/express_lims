@@ -27,7 +27,7 @@
             <form class="form-horizontal" id='editItemForm' onsubmit="editItem()">
                 <div class="modal-body">
                     <p class="lead">Editing the item <span id="editID"></span></p>
-                    <? get_form_table_row($table); // vars defined by build_table() in EL.php ?>
+                    <?php get_form_table_row($table); // vars defined by build_table() in EL.php ?>
                 </div>
                 <div class="modal-footer">
                     <a href="#" class="btn" data-dismiss="modal">Cancel</a>
@@ -75,27 +75,6 @@
 
 
 
-<!-- delete table modal -->
-<div class="modal fade" id="deleteTableModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content panel-danger">
-      <div class="modal-header panel-heading">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title"><i class="fa fa-times" aria-hidden="true"></i> Delete table</h4>
-      </div>
-      <div class="modal-body">
-        Are you sure you want to delete the table <span id="deleteTableID"></span>? <strong>Note:</strong> you cannot undo this.
-      </div>
-      <div class="modal-footer">
-        <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-        <button type="button" class="btn btn-danger" id="confirmDeleteTable">Delete table</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
 
 
 
@@ -112,7 +91,7 @@
             </div>
             <form class="form-horizontal" id='addItemForm' onsubmit="addItem()">
                 <div class="modal-body">
-                        <? get_form_table_row($table); // vars defined by build_table() in EL.php ?>
+                        <?php get_form_table_row($table); // vars defined by build_table() in EL.php ?>
                 </div>
                 <div class="modal-footer">
                     <a href="#" class="btn" data-dismiss="modal">Cancel</a>

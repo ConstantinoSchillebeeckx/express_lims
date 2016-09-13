@@ -607,8 +607,8 @@ function delete_table_from_db() {
         $sql = "DROP TABLE " . $table;
         $sql2 = "DROP TABLE " . $table_history;
 
+        $res2 = exec_query($sql2); // delete history table first since it has an FK on it's counterpart
         $res = exec_query($sql);
-        $res2 = exec_query($sql2);
 
         if ($res && $res2) {
             $msg = sprintf("The table <code>%s</code> was properly deleted.", $data['table_name']);
@@ -675,6 +675,7 @@ function add_table_to_db() {
     array_push($fields, $uid_field);
     array_push($history_fields, $uid_field); 
     array_push($history_fields, $uid_fk); 
+    array_push($history_fields, ' `Timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP');
 
     for ($i = 1; $i <= $field_num; $i++) {
         $tmp_sql = '';
