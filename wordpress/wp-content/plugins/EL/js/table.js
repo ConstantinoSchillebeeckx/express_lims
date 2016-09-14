@@ -470,7 +470,7 @@ function addField() {
     var dom = ['<div class="panel panel-default" style="margin-bottom:40px;" id="field-' + fieldNum + '">',
             '<div class="panel-heading">',
             '<span class="panel-title">Field #' + fieldNum + '</span>',
-            '<button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>',
+            '<button type="button" onclick="fieldNum-=1;" class="close" data-dismiss="alert" data-target="#field-' + fieldNum + '"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>',
             '</div>',
             '<div class="panel-body">',
             '<div class="form-group">',
@@ -517,17 +517,6 @@ function addField() {
             '</div>']
     jQuery("form").append(dom.join('\n'));
 }
-
-
-
-
-
-jQuery('#field-1').on('close.bs.alert', function () {
-
-    console.log('here');
-
-})
-
 
 
 
