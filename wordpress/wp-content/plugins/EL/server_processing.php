@@ -46,7 +46,7 @@ Return:
   otherwise and return false.
 
 */
-function connect_db($db_name) {
+function connect_db($db_name = false) {
 
     if (!$db_name) $db_name = DB_NAME_EL;
 
@@ -395,7 +395,7 @@ function delete_item_from_db() {
             // check if ref table has a ref field equal to $id
             if (table_has_value($ref_table, $ref_field, $id)) {
                 $msg = sprintf("The item <code>$id</code> that you are trying to delete is referenced as a foreign key in the table <code><a href='%s?table=$ref_table_safe'>$ref_table_safe</a></code>; you must remove all the entries in that table first, before deleting this entry.", VIEW_TABLE_URL_PATH);
-                $ret = array("msg" => $msg, "status" => false);
+                $ret = array("msg" => $msg, "status" => false, "hide" => false);
                 return json_encode($ret);
             }
         }
@@ -424,10 +424,10 @@ function delete_item_from_db() {
     //$sql = sprintf("DELETE FROM %s WHERE `%s` = '%s'", $table_full_name, $pk, $id);
     if ( $ret && $prep_hist ) {
         $msg = sprintf("The item was properly archived.");
-        $ret = array("msg" => $msg, "status" => true, "log"=>$sql);
+        $ret = array("msg" => $msg, "status" => true, "log"=>$sql, "hide" => true);
         return json_encode($ret);
     } else {
-        return json_encode(array("msg"=>"There was an error, please try again", "status"=>false, "log"=>array($wpdb, $wpdb_history, $dat, $types, $visible_fields)));
+        return json_encode(array("msg"=>"There was an error, please try again", "status"=>false, "log"=>array($wpdb, $wpdb_history, $dat, $types, $visible_fields), "hide" => false));
     }
 
 
@@ -494,7 +494,7 @@ function add_item_to_db() {
         $full_name = $table_class->get_full_name();
 
         if ($msg !== true) {
-            return json_encode(array("msg" => $msg, "status" => false));
+            return json_encode(array("msg" => $msg, "status" => false, "hide" => false));
         }
 
         // construct prepared statement
@@ -514,15 +514,15 @@ function add_item_to_db() {
 
         if ( $prep && $prep_hist ) {
             if ($dat[$pk]) {
-                return json_encode(array("msg" => sprintf('Item <code>%s</code> successfully added to LIMS.', $dat[$pk]), "status" => true, "log"=>$stmt ));
+                return json_encode(array("msg" => sprintf('Item <code>%s</code> successfully added to LIMS.', $dat[$pk]), "status" => true, "hide" => true, "log"=>$stmt ));
             } else {
-                return json_encode(array("msg" => 'Item successfully added to LIMS.', "status" => true, "log"=>$wpdb ));
+                return json_encode(array("msg" => 'Item successfully added to LIMS.', "status" => true, "hide" => true, "log"=>$wpdb ));
             }
         } else {
-            return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "log" => array($prep, $types, $dat, $full_name, $wpdb ) ));
+            return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "hide" => false, "log" => array($prep, $types, $dat, $full_name, $wpdb ) ));
         }
     }
-    return json_encode(array("msg" => 'There was an error, please try again.', "status" => false));
+    return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "hide" => false));
 
 }
 
@@ -616,7 +616,7 @@ function edit_item_in_db() {
             $msg = validate_item_in_table($table, $edits);
 
             if ($msg !== true) {
-                return json_encode(array("msg" => $msg, "status" => false, 'log'=>array($edits,$dat,$original_row)));
+                return json_encode(array("msg" => $msg, "status" => false, 'log'=>array($edits,$dat,$original_row), "hide" => false));
             }
 
             // prepare statement
@@ -636,15 +636,15 @@ function edit_item_in_db() {
             $prep_hist = $wpdb_history->insert($table, $dat, $types);
 
             if ( $prep && $prep_hist ) {
-                return json_encode(array("msg" => 'Item successfully edited.', "status" => true, 'log'=>array($wpdb_history, $dat, $types))); // TODO cleanup log when finished (for safety)
+                return json_encode(array("msg" => 'Item successfully edited.', "hide" => true, "status" => true, 'log'=>array($wpdb_history, $dat, $types))); // TODO cleanup log when finished (for safety)
             } else {
-                return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, 'log'=>array($table, $dat, $pk_eq, $types, $wpdb))); // clean up log when finished (for safety)
+                return json_encode(array("msg" => 'There was an error, please try again.', "hide" => false, "status" => false, 'log'=>array($table, $dat, $pk_eq, $types, $wpdb))); // clean up log when finished (for safety)
             }
         } else {
-            return json_encode(array("msg" => 'Values are not any different than current ones, nothing was edited.', "status" => true));
+            return json_encode(array("msg" => 'Values are not any different than current ones, nothing was edited.', "status" => false, "hide" => true));
         }
     }
-    return json_encode(array("msg" => 'There was an error, please try again.', "status" => false));
+    return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "hide" => false));
 
 }
 
@@ -687,7 +687,7 @@ function delete_table_from_db() {
                 $ref_field = explode('.',$ref)[1];
                 $msg .= "$ref_field (in table $ref_table)";
             }
-            return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false));
+            return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false, "hide" => false));
         }
 
 
@@ -699,15 +699,15 @@ function delete_table_from_db() {
 
         if ($res && $res2) {
             $msg = sprintf("The table <code>%s</code> was properly deleted.", $data['table_name']);
-            $ret = array("msg" => $msg, "status" => true, "log"=>$sql);
+            $ret = array("msg" => $msg, "status" => true, "log"=>$sql, "hide" => true);
             init_db(); // refreh
             return json_encode($ret);
         } else {
-            return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false, "log"=>$sql));
+            return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false, "log"=>$sql, "hide" => false));
         }
 
     } else {
-            return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false, "log"=>$sql));
+            return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false, "log"=>$sql, "hide" => false));
     }
 
 
@@ -747,7 +747,7 @@ function add_table_to_db() {
         $table_name = $db->get_name() . '.' . $db->get_company() . '_' . $data['table_name'];
         $table_name_history = $db->get_name() . '_history.' . $db->get_company() . '_' . $data['table_name'];
     } else {
-        return json_encode(array("msg" => 'Only letters, numbers, underscores and dashes are allowed in the table name.', "status" => false)); 
+        return json_encode(array("msg" => 'Only letters, numbers, underscores and dashes are allowed in the table name.', "status" => false, "hide" => false)); 
     }
 
     $binds = array();
@@ -777,12 +777,12 @@ function add_table_to_db() {
 
         // ensure field name is only alphanumeric
         if (!preg_match('/^[a-z0-9 .\-_]+$/i', $field_name)) {
-            return json_encode(array("msg" => "Only letters, numbers, spaces, underscores and dashes are allowed in the field name; please adjust the field <code>$field_name</code>.", "status" => false)); 
+            return json_encode(array("msg" => "Only letters, numbers, spaces, underscores and dashes are allowed in the field name; please adjust the field <code>$field_name</code>.", "status" => false, "hide" => false)); 
         }
 
         // ensure default field is only alphanumeric
         if ($field_default && !preg_match('/^[a-z0-9 .\-_]+$/i', $field_default)) {
-            return json_encode(array("msg" => "Only letters, numbers, spaces, underscores and dashes are allowed as a default value; please adjust the default value <code>$field_default</code>.", "status" => false));
+            return json_encode(array("msg" => "Only letters, numbers, spaces, underscores and dashes are allowed as a default value; please adjust the default value <code>$field_default</code>.", "status" => false, "hide" => false));
         }
 
         $field_type = $data['type-' . $i];
@@ -804,7 +804,7 @@ function add_table_to_db() {
             if ($field_class) {
                 $field_type = $field_class->get_type();
             } else {
-                return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false, "log"=>array($fk_table, $fk_col, $field_class)));
+                return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false, "log"=>array($fk_table, $fk_col, $field_class), "hide" => false));
             }
         }
 
@@ -859,11 +859,11 @@ function add_table_to_db() {
 
     if ($res && $res2) {
         $msg = sprintf("The table <code>%s</code> was properly created.", $data['table_name']);
-        $ret = array("msg" => $msg, "status" => true, "log"=>$sql);
+        $ret = array("msg" => $msg, "status" => true, "log"=>$sql, "hide" => true);
         init_db(); // refresh so that table will show up in menu
         return json_encode($ret);
     } else {
-        return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false, "log"=>$sql));
+        return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false, "log"=>$sql, "hide" => false));
     }
 
 
@@ -878,8 +878,8 @@ function add_table_to_db() {
 
 This function will run all the necessarry error
 checks on an item within a table.  It will check
-any unique constraint, as well as not null and
-foreign keys
+any unique constraint, as well as not null,
+foreign keys and field length
 
 Parameters:
 ===========
@@ -902,11 +902,11 @@ function validate_item_in_table($table, $dat) {
         if (array_key_exists($field, $dat) ) { // only check errors on provided fields in $dat
 
             $field_class = $table_class->get_field($field);
+            $check_val = $dat[$field];
 
             // check unique constraint
             if ( $field_class->is_unique() ) {
                 $unique_vals = $field_class->get_unique_vals();
-                $check_val = $dat[$field];
                 if ( $unique_vals && in_array( $check_val, $unique_vals ) ) {
                     return sprintf("The field <code>%s</code> is unique and already contains the value <code>%s</code>", $field, $check_val);
                 }
@@ -915,9 +915,16 @@ function validate_item_in_table($table, $dat) {
             // TODO validate types (date)
 
 
+            // validate length
+            $length = $field_class->get_length(); // float will be 'null' length; string and int will have int length
+            if ($length && strlen(strval($check_val)) > $length) {
+                return sprintf("The field <code>%s</code> can only store data with a max character length of <code>%s</code>, data with length <code>%s</code> was provided.", $field, $length, strlen(strval($check_val)));
+            }
+
+
             // check not null (required) constraint
             if ( $field_class->is_required() ) {
-                if ( !$dat[$field] ) {
+                if ( !$check_val ) {
                     return sprintf("The field <code>%s</code> is required, please specify a value.", $field);
                 }
             }
@@ -926,7 +933,7 @@ function validate_item_in_table($table, $dat) {
             // XXX probably don't need to do this since the form was populated with a dropdown
             if ( $field_class->is_fk() ) {
                 $fk_vals = $field_class->get_fks();
-                if ( !( in_array( $dat[$field], $fk_vals ) ) ) {
+                if ( !( in_array( $check_val, $fk_vals ) ) ) {
                     return sprintf("The field <code>%s</code> is a foreign key and must be one of the following: %s.", $field, implode(', ', $fk_vals) );
                 }
             }

@@ -367,6 +367,7 @@ class Field {
     protected $name;
     protected $table;
     protected $comment;
+    protected $length;
 
     public function __construct($table, $name, $fks, $info) {
         $this->name = $name;
@@ -376,6 +377,7 @@ class Field {
         $this->extra = $info[$name]["Extra"];
         $this->comment = json_decode($info[$name]["Comment"], true);
         $this->table = $table;
+        $this->length = $this->get_length();
 
         // check if field is required
         if ( $info[$name]["Null"] == "YES" || in_array($this->type, array('timestamp', 'date') ) ) {
@@ -461,6 +463,22 @@ class Field {
     // return field type
     public function get_type() {
         return $this->type;
+    }
+
+    // return field type length
+    // if no type, return false,
+    // if float, date or timestamp return null
+    // if int or string, return int val
+    public function get_length() {
+        if ($this->type) {
+            if (strpos($this->type, '(') !== false) {
+                return intval(str_replace(')', '', explode('(', $this->type)[1]));
+            } else {
+                return null;
+            }
+        } else {
+            return false;
+        }
     }
 
     // return true if field is required

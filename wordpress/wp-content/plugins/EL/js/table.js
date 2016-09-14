@@ -158,7 +158,10 @@ function deleteItem(id) {
     doAJAX(data, function() {
         if (ajaxStatus) {
             jQuery('#datatable').DataTable().draw('page'); // refresh table
-            showMsg(ajaxResponse, false); // success messages dissappear
+            showMsg(ajaxResponse);
+        } else {
+            showMsg({"msg":"There was an error deleting the item, please try again.", "status": false, 'hide': false});
+            console.log(ajaxReponse);
         }
     });
 
@@ -301,7 +304,7 @@ function addItem() {
 
     // ensure something is in the form
     if (jQuery.isEmptyObject(getFormData('#addItemForm'))) {
-        showMsg({'msg':'Please specify something to add.', 'status':false});
+        showMsg({'msg':'Please specify something to add.', 'status':false, 'hide': false});
     } else {
 
 
@@ -318,7 +321,10 @@ function addItem() {
         doAJAX(data, function() {
             if (ajaxStatus) {
                 jQuery('#datatable').DataTable().draw('page'); // refresh table
-                showMsg(ajaxResponse, false); // success messages dissappear
+                showMsg(ajaxResponse);
+            } else {
+                showMsg({"msg":"There was an error adding the item, please try again.", "status": false, "hide": false});
+                console.log(ajaxReponse);
             }
         });
     }
@@ -357,7 +363,10 @@ function editItem(id) {
     doAJAX(data, function() {
         if (ajaxStatus) {
             jQuery('#datatable').DataTable().draw('page'); // refresh table
-            showMsg(ajaxResponse, false); // success messages dissappear
+            showMsg(ajaxResponse);
+        } else {
+            showMsg({"msg":"There was an error editing the item, please try again.", "status": false, 'hide': false});
+            console.log(ajaxReponse);
         }
     });
 
@@ -380,7 +389,8 @@ Paramters:
 
 Returns:
 --------
-- on success, will run callback, otherwise will display error message
+will set globals ajaxStatus (true on success, false otherwise) and
+ajaxResponse as well as run the callback on complete.
 
 */
 function doAJAX(data, callback) {
@@ -397,13 +407,14 @@ function doAJAX(data, callback) {
             success: function(response) {
                 ajaxStatus = true;
                 ajaxResponse = response;
-                callback();
             },
             error: function(xhr, status, error) {
                 ajaxResponse = xhr.responseText;
                 console.log(xhr.responseText);
-                showMsg({"msg":"There ws an error, please try again.", "status": false});
             },
+            complete: function() {
+                callback();
+            }
     });
 
 }
@@ -436,13 +447,13 @@ Parameters:
 - dat : object
         -> msg : msg to display
         -> status : bool - true if success msg, false if error msg
-- disableTimer : bool (optional)
-            if true, message will not automatically be removed, defaults to true
+        -> hide : bool - true will auto-hide message after 3s (if key is ommited, message will hide)
 */
-function showMsg(dat, disableTimer=true) {
+function showMsg(dat) {
 
     var type = dat.status ? 'success' : 'danger';
     var msg = dat.msg;
+    var hide = dat.hide; // true will auto-remove the message, false will keep message on scree
     var alertDiv = '<div id="alertDiv" class="alert alert-' + type + ' alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>' + msg + '</div>';
 
     jQuery( alertDiv ).prependTo( "main" );
@@ -454,7 +465,7 @@ function showMsg(dat, disableTimer=true) {
         });
     }, 3000);
 
-    if (disableTimer) {
+    if (!hide) {
         clearTimeout(timeout);
     }
 
@@ -596,7 +607,10 @@ function deleteTable(tableName) {
     doAJAX(data, function() {
         if (ajaxStatus) {
             removeTableFromNav(data.dat.table_name);
-            showMsg(ajaxResponse, false); // success messages dissappear
+            showMsg(ajaxResponse);
+        } else {
+            showMsg({"msg":"There was an error deleting the table, please try again.", "status": false, 'hide': false});
+            console.log(ajaxReponse);
         }
     });
 
@@ -640,7 +654,10 @@ function editTable() {
     // send data to server
     doAJAX(data, function() {
         if (ajaxStatus) {
-            showMsg(ajaxResponse, false); // success messages dissappear
+            showMsg(ajaxResponse);
+        } else {
+            showMsg({"msg":"There was an error editing the table, please try again.", "status": false, "hide": false});
+            console.log(ajaxReponse);
         }
     });
 
@@ -676,7 +693,7 @@ function addTable() {
             var table = db['tables'][i];
             var table_safe = table.split('_')[1];
             if (table_safe.toLowerCase() == data.dat.table_name.toLowerCase()) {
-                showMsg({'msg':'Table name <code>' + table_safe + '</code> already exists, please choose another.', 'status':false});
+                showMsg({'msg':'Table name <code>' + table_safe + '</code> already exists, please choose another.', 'status':false, 'hide': false});
                 return;
             }
         }
@@ -688,7 +705,7 @@ function addTable() {
             var field = 'name-' + i;
             var name = data.dat[field];
             if (names.indexOf(name) > -1) { // name not unique
-                showMsg({'msg':'All column names must be unique, <code>' + name + '</code> given multiple times.', 'status':false});
+                showMsg({'msg':'All column names must be unique, <code>' + name + '</code> given multiple times.', 'status':false, 'hide': false});
                 return;
             }        
             names.push(name);
@@ -698,10 +715,10 @@ function addTable() {
             if (defaultVal) {
                 var type = data.dat['type-' + i];
                 if ( type == 'float' && !(isFloat(defaultVal) || isInt(defaultVal)) ) {
-                    showMsg({'msg':'If specifying a float type for the column <code>' + name + '</code>, please ensure the default value is a float value.', 'status':false});
+                    showMsg({'msg':'If specifying a float type for the column <code>' + name + '</code>, please ensure the default value is a float value.', 'status':false, 'hide': false});
                     return;
                 } else if ( type == 'int' && !isInt(defaultVal) ) {
-                    showMsg({'msg':'If specifying an integer type for the column <code>' + name + '</code>, please ensure the default value is an integer.', 'status':false});
+                    showMsg({'msg':'If specifying an integer type for the column <code>' + name + '</code>, please ensure the default value is an integer.', 'status':false, 'hide': false});
                     return;
                 }
             }
@@ -712,7 +729,10 @@ function addTable() {
         doAJAX(data, function() {
             if (ajaxStatus) {
                 addTableToNav(data.dat.table_name);
-                showMsg(ajaxResponse, false); // success messages dissappear
+                showMsg(ajaxResponse);
+            } else {
+                showMsg({"msg":"There was an error creating the table, please try again.", "status": false, 'hide': false});
+                console.log(ajaxReponse);
             }
         });
     }
