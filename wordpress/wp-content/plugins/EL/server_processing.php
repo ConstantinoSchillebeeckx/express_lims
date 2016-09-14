@@ -858,7 +858,7 @@ function add_table_to_db() {
     $res2 = exec_query($sql2);
 
     if ($res && $res2) {
-        $msg = sprintf("The table <code>%s</code> was properly created.", $data['table_name']);
+        $msg = sprintf("The table <code>%s</code> was properly created; being adding <a href='%s'>data</a>.", $data['table_name'], VIEW_TABLE_URL_PATH . '?table=' . $data['table_name']);
         $ret = array("msg" => $msg, "status" => true, "log"=>$sql, "hide" => true);
         init_db(); // refresh so that table will show up in menu
         return json_encode($ret);
