@@ -295,17 +295,24 @@ function addItem() {
 
     event.preventDefault(); // cancel form submission
 
-    var data = {
-            "action": "addItem", 
-            "table": table, // var set by build_table() in EL.php
-            "pk": pk, // var set by build_table() in EL.php
-            "dat": getFormData('#addItemForm'), // form values
-    }
+    // ensure something is in the form
+    if (jQuery.isEmptyObject(getFormData('#addItemForm'))) {
+        showMsg({'msg':'Please specify something to add.', 'status':false});
+    } else {
 
-    console.log(data)
- 
-    // send data to server
-    doAJAX(data);
+
+        var data = {
+                "action": "addItem", 
+                "table": table, // var set by build_table() in EL.php
+                "pk": pk, // var set by build_table() in EL.php
+                "dat": getFormData('#addItemForm'), // form values
+        }
+
+        console.log(data)
+     
+        // send data to server
+        doAJAX(data);
+    }
     
     jQuery('#addItemModal').modal('toggle'); // hide modal
 
