@@ -26,11 +26,17 @@ function getData(table, columns, pk, filter, hidden, tableID) {
 
 
     // html for Action button column
-    var buttonHTML = '<div class="btn-group" role="group">';
-    buttonHTML += '<button onclick="historyModal(this)" type="button" class="btn btn-info btn-xs" title="History"><i class="fa fa-history" aria-hidden="true"></i></button>'
-    buttonHTML += '<button onclick="editModal(this)" type="button" class="btn-xs btn btn-warning" title="Edit"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></button>'
-    buttonHTML += '<button onclick="deleteModal(this)" type="button" class="btn-xs btn btn-danger" title="Delete"><i class="fa fa-times" aria-hidden="true"></i></button>'
-    buttonHTML += '</div>';
+    if (tableID == '#datatable') {
+        var buttonHTML = '<div class="btn-group" role="group">';
+        buttonHTML += '<button onclick="historyModal(this)" type="button" class="btn btn-info btn-xs" title="History"><i class="fa fa-history" aria-hidden="true"></i></button>'
+        buttonHTML += '<button onclick="editModal(this)" type="button" class="btn-xs btn btn-warning" title="Edit"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></button>'
+        buttonHTML += '<button onclick="deleteModal(this)" type="button" class="btn-xs btn btn-danger" title="Delete"><i class="fa fa-times" aria-hidden="true"></i></button>'
+        buttonHTML += '</div>';
+    } else if (tableID == '#historyTable') {
+        var buttonHTML = '<div class="text-center">';
+        buttonHTML += '<button onclick="#" type="button" class="btn btn-info btn-xs" title="History"><i class="fa fa-undo" aria-hidden="true"></i></button>'
+        buttonHTML += '</div>';
+    }
 
     jQuery.fn.dataTable.ext.errMode = 'throw'; // Have DataTables throw errors rather than alert() them
 
@@ -44,14 +50,16 @@ function getData(table, columns, pk, filter, hidden, tableID) {
                 "filter": filter,
                 }
 
-    var colDefs = [ { // https://datatables.net/examples/ajax/null_data_source.html
-            // set Action column data to empty since we are automatically adding buttons here
+    var colDefs = [];
+
+    // set Action column data to empty since we are automatically adding buttons here
+    colDefs.push({ // https://datatables.net/examples/ajax/null_data_source.html
                 "targets": -1,
                 "data": null,
                 "defaultContent": buttonHTML,
-                "width": "70px",
+                "width": tableID == '#datatable' ? "70px" : "40px",
                 "orderable": false,
-            }]
+            });
 
     // hide any columns listed in hidden
     // also make them non-searchable
@@ -62,10 +70,11 @@ function getData(table, columns, pk, filter, hidden, tableID) {
         }
     }
 
+    console.log(hidden)
+
     jQuery(tableID).DataTable( {
         "processing": true,
         "serverSide": true,
-        "responsive": true,
         "ajax": {
             "url": ajax_object.ajax_url,
             "data": data,
@@ -168,13 +177,17 @@ Parameters:
 function historyModal(sel) {
 
     // find first col value (PK) of row from button press
-    var val = jQuery(sel).parents("tr").find(">:first-child").html()
-    jQuery("#historyID").html( "<code>" + val + "</code>" ); // set PK message
+    var rowNum = jQuery(sel).closest('tr').index();
+    var rowVals = jQuery('#datatable').DataTable().row(rowNum).data();
+    var uidVal = rowVals[0];
+    var itemVal = rowVals[1];
+
+    jQuery("#historyID").html( "<code>" + itemVal + "</code>" ); // set PK message
     jQuery('#historyModal').modal('toggle'); // show modal
 
-    // fill talbe with data
+    // fill table with data
     // vars are defined in modal.php
-    getData(table, columnHist, pk, null, hiddenHist, '#historyTable');
+    getData(table, columnHist, pk, {'_UID_fk': uidVal}, hiddenHist, '#historyTable');
 }
 
 

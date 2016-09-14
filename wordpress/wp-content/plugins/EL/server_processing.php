@@ -319,11 +319,9 @@ function get_data_from_db() {
             
                 $col_name = $aColumns[$i];
                 $field_class = $table_class->get_field( $col_name ); // Field class
+                $val = $aRow[ $col_name ];
                 if ($field_class) {
                     $comment = $field_class->get_comment();
-
-                    $val = $aRow[ $col_name ];
-
 
                     // reformat value if needed
                     if ( $comment && array_key_exists('column_format', $comment) ) {
@@ -333,7 +331,9 @@ function get_data_from_db() {
                     }
                 } 
 
-                if ( $field_class && $field_class->is_unique() ) { // don't add filter to unique items since it doesnt make sense to filter them
+                // don't add filter to unique items (since it doesnt make sense to filter them)
+                // or to history table
+                if ( ($field_class && $field_class->is_unique()) || in_array('_UID_fk', $aColumns) ) {
                     $row[] = $val;
                 } else { // format with filter
                     $url = sprintf("%s&filter=%s,%s", $_SERVER['HTTP_REFERER'], $col_name, $val );
@@ -833,7 +833,7 @@ function add_table_to_db() {
         $field_unique ? $tmp_sql .= " UNIQUE" : null;
   
         array_push($fields, $tmp_sql); 
-        array_push($history_fields, str_replace(' UNIQUE','', $tmp_sql) ); // only the manually added UID field can be unique
+        array_push($history_fields, str_replace(array(' UNIQUE', ' NOT NULL'),'', $tmp_sql) ); // only the manually added UID field can be unique
 
         // if FK type was requested, add the constraint
         if ($data['type-' . $i] == 'fk') {

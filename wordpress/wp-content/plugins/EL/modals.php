@@ -13,16 +13,27 @@
         
             $fields_hist = $db->get_fields($table); 
             $fields_hist = array_merge($fields_hist, array('_UID_fk','_timestamp','_user','_action'));
-            $hidden_hist = $table_class->get_hidden_fields();
+            $hidden_hist = array_values($table_class->get_hidden_fields());
             array_push($hidden_hist, '_UID_fk');
             ?>
             
-            <table class="table table-bordered table-hover" id="historyTable">
+            <table class="table table-bordered table-hover table-responsive" id="historyTable">
             <thead>
             <tr class="info">
 
-            <?php foreach ( $fields_hist as $field ) echo "<th>$field</th>"; ?>
+            <?php foreach ( $fields_hist as $field ) {
+                if ($field == '_timestamp') {
+                    echo "<th>Timestamp</th>";
+                } else if ($field == '_user') {
+                    echo "<th>User</th>";
+                } else if ($field == '_action') {
+                    echo "<th>Notes</th>";
+                } else {
+                    echo "<th>$field</th>"; 
+                }
+            } ?>
 
+            <th>Revert</th>
             </tr>
             </thead>
             </table>
