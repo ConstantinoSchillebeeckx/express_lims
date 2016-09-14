@@ -230,6 +230,24 @@ class Table {
         return DB_NAME_EL . '.' . $this->get_name();
     }
 
+    // return full name (with DB prepended)
+    public function get_full_name_history() {
+        return DB_NAME_EL_HISTORY . '.' . $this->get_name();
+    }
+
+    // return an array of non-hidden fields
+    public function get_visible_fields() {
+        $fields = array();
+        if (count($this->fields)) {
+            foreach($this->fields as $field) {
+                if (!$this->get_field($field)->is_hidden()) {
+                    $fields[] = $field;
+                }
+            }
+        }
+        return $fields;
+    }
+
     // return array of fields in table
     public function get_fields() {
         return $this->fields;
@@ -397,6 +415,11 @@ class Field {
     // return true if field is referenced by an FK
     public function is_ref() {
         return $this->is_ref;
+    }
+
+    // return true if field is hidden
+    public function is_hidden() {
+        return $this->hidden;
     }
 
     // return the default value

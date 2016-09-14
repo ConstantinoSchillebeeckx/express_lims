@@ -362,12 +362,7 @@ function doAJAX(data) {
                 }
                 console.log(response);
 
-                // disable autohide of message if certain type of error
-                if (response && response.msg.indexOf('that you are trying to delete is referenced as a foreign key') > -1) {
-                    showMsg(response, true);
-                } else {
-                    showMsg(response);
-                }
+                showMsg(response);
 
                 // add table to nav
                 if (data.action == 'addTable' && response['status']) {
@@ -410,9 +405,9 @@ Parameters:
         -> msg : msg to display
         -> status : bool - true if success msg, false if error msg
 - disableTimer : bool (optional)
-            if true, message will not automatically be removed, defaults to false (3s timer)
+            if true, message will not automatically be removed, defaults to true
 */
-function showMsg(dat, disableTimer=false) {
+function showMsg(dat, disableTimer=true) {
 
     var type = dat.status ? 'success' : 'danger';
     var msg = dat.msg;

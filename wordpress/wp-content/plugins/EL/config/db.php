@@ -12,6 +12,7 @@
  */
 define("DB_HOST_EL", "internal-db.s215537.gridserver.com");
 define("DB_NAME_EL", "db215537_EL");
+define("DB_NAME_EL_HISTORY", "db215537_EL_history");
 define("DB_USER_EL", "db215537_el");
 define("DB_PASS_EL", "K3r7mS#SMxJvDgo@dyvxv\$LeooQXN8!$");
 

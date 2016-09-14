@@ -361,6 +361,9 @@ function delete_item_from_db() {
     $pk = $_GET['pk'];
     $table_full_name = $db->get_name() . '.' . $table;
     $table_class = $db->get_table($table);
+    $visible_fields = $table_class->get_visible_fields();
+    $wpdb = new wpdb(DB_USER_EL, DB_PASS_EL, DB_NAME_EL, DB_HOST_EL);
+    $wpdb_history = new wpdb(DB_USER_EL, DB_PASS_EL, DB_NAME_EL_HISTORY, DB_HOST_EL);
 
     // check if, when deleting a row, it's referenced by an FK
     // if it is, then the item can't be deleted unless the 
@@ -383,18 +386,33 @@ function delete_item_from_db() {
         }
     }
 
-    // update history
-    // TODO
+
 
     // delete row
-    $sql = sprintf("DELETE FROM %s WHERE `%s` = '%s'", $table_full_name, $pk, $id);
-    $ret = exec_query($sql);
-    if ($ret) {
+    $ret = $wpdb->delete($table, array($pk => $id), array('%d') );
+
+    // update history
+    // deleted item gets all blank data
+    $dat = array();
+    foreach($visible_fields as $field) {
+        $dat[$field] = '0';
+    }
+    $types = array_fill(0, count($visible_fields), '%s');
+    $dat['_UID_fk'] = $id;
+    $dat['_user'] = get_current_user_id();
+    $dat['_action'] = 'delete';
+    array_push($types, '%d');
+    array_push($types, '%s');
+    array_push($types, '%s');
+    $prep_hist = $wpdb_history->insert($table, $dat, $types);
+
+    //$sql = sprintf("DELETE FROM %s WHERE `%s` = '%s'", $table_full_name, $pk, $id);
+    if ( $ret && $prep_hist ) {
         $msg = sprintf("The item was properly archived.");
         $ret = array("msg" => $msg, "status" => true, "log"=>$sql);
         return json_encode($ret);
     } else {
-        return json_encode(array("msg"=>"There was an error, please try again", "status"=>false, "log"=>$ret));
+        return json_encode(array("msg"=>"There was an error, please try again", "status"=>false, "log"=>array($wpdb, $wpdb_history, $dat, $types, $visible_fields)));
     }
 
 
@@ -448,6 +466,8 @@ Parameters:
 function add_item_to_db() {
 
     $db = get_db();
+    $wpdb = new wpdb(DB_USER_EL, DB_PASS_EL, DB_NAME_EL, DB_HOST_EL);
+    $wpdb_history = new wpdb(DB_USER_EL, DB_PASS_EL, DB_NAME_EL_HISTORY, DB_HOST_EL);
     $table = $_GET['table'];
     $dat = $_GET['dat'];
     $pk = $_GET['pk'];
@@ -456,44 +476,88 @@ function add_item_to_db() {
     if ( isset( $table ) && isset( $dat ) ) {
         $table_class = $db->get_table($table);
         $msg = validate_item_in_table($table, $dat);
+        $full_name = $table_class->get_full_name();
 
         if ($msg !== true) {
             return json_encode(array("msg" => $msg, "status" => false));
         }
 
-        // check field type and enforce
-        $types = '';
-        foreach($dat as $field => $field_val) {
-            $field_class = $table_class->get_field($field);
-            $type = $field_class->get_type();
-            
-            if (strpos($type, 'float') !== false) {
-                $types .= 'd';
-            } else if (strpos($type, 'int') !== false) {
-                $types .= 'i';
-            } else {
-                $types .= 's';
-            }
-        }
+        // construct prepared statement
+        $types = get_types($dat, $table_class);
+        $prep = $wpdb->insert($table, $dat, $types);
 
-        // prepare statement to add item
-        $cols = '`' . implode( '`, `', array_keys($dat) ) . '`';
-        $vals = implode(', ', array_pad(array(), count($dat), '?'));
-        $stmt = sprintf('INSERT INTO %s (%s) VALUES (%s)', $table_class->get_full_name(), $cols, $vals);
-        $prep = prepare_statement( $stmt, $dat, $types);
-        if ( $prep ) {
+        // construct prepared statment for history
+        // has additional _UID_fk, _user & _action fields
+        $dat['_UID_fk'] = $wpdb->insert_id;
+        $dat['_user'] = get_current_user_id();
+        $dat['_action'] = 'add';
+        array_push($types, '%d');
+        array_push($types, '%s');
+        array_push($types, '%s');
+        $prep_hist = $wpdb_history->insert($table, $dat, $types);
+            
+
+        if ( $prep && $prep_hist ) {
             if ($dat[$pk]) {
                 return json_encode(array("msg" => sprintf('Item <code>%s</code> successfully added to LIMS.', $dat[$pk]), "status" => true, "log"=>$stmt ));
             } else {
-                return json_encode(array("msg" => 'Item successfully added to LIMS.', "status" => true, "log"=>$stmt ));
+                return json_encode(array("msg" => 'Item successfully added to LIMS.', "status" => true, "log"=>$wpdb ));
             }
         } else {
-            return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "log" => $prep ));
+            return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "log" => array($prep, $types, $dat, $full_name, $wpdb ) ));
         }
     }
     return json_encode(array("msg" => 'There was an error, please try again.', "status" => false));
 
 }
+
+
+/* Return data types in preparation for inserting data to DB
+
+Parameters:
+-----------
+- $dat : assoc array
+         [col name: vol value]
+- $table_class : class
+                 table class for table associated with table
+
+Returns:
+--------
+array filled with %s (for string),
+%d (for integer) and %f for float
+
+*/
+
+function get_types($dat, $table_class) {
+
+    $types = array();
+    foreach($dat as $field => $field_val) {
+        $cols[] = $field;
+        $field_class = $table_class->get_field($field);
+        $type = $field_class->get_type();
+        
+        if (strpos($type, 'float') !== false) {
+            $types[] = '%f';
+        } else if (strpos($type, 'int') !== false) {
+            $types[] = '%d';
+        } else {
+            $types[] = '%s';
+        }
+    }
+
+    return $types;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -517,6 +581,8 @@ function edit_item_in_db() {
     $pk = $_GET['pk'];
     $original_row = $_GET['original_row'];
     $pk_val = $original_row[$pk];
+    $wpdb = new wpdb(DB_USER_EL, DB_PASS_EL, DB_NAME_EL, DB_HOST_EL);
+    $wpdb_history = new wpdb(DB_USER_EL, DB_PASS_EL, DB_NAME_EL_HISTORY, DB_HOST_EL);
 
     if ( isset( $table ) && isset( $dat ) ) {
 
@@ -538,35 +604,26 @@ function edit_item_in_db() {
                 return json_encode(array("msg" => $msg, "status" => false, 'log'=>array($edits,$dat,$original_row)));
             }
 
-
-            // check field type and enforce
-            $types = '';
+            // prepare statement
             $table_class = $db->get_table($table);
-            foreach($edits as $field => $field_val) {
-                $field_class = $table_class->get_field($field);
-                $type = $field_class->get_type();
-                
-                if (strpos($type, 'float') !== false) {
-                    $types .= 'd';
-                } else if (strpos($type, 'int') !== false) {
-                    $types .= 'i';
-                } else {
-                    $types .= 's';
-                }
-            }
+            $pk_eq[$pk] = $pk_val; // WHERE part of clause
+            $prep = $wpdb->update($table, $edits, $pk_eq, $types, array('%d'));
 
-            // prepare statement to add item
-            $pk_eq = sprintf("`%s` = '%s'", $pk, $pk_val);
-            $col_eq = array();
-            foreach ($edits as $col => $val) {
-                $col_eq[] .= "`" . $col . "`= ?";
-            }
-            $stmt = sprintf('UPDATE %s SET %s WHERE %s', $table_class->get_full_name(), implode(', ', $col_eq), $pk_eq);
-            $prep = prepare_statement( $stmt, $edits, $types );
-            if ( $prep === true ) {
-                return json_encode(array("msg" => 'Item successfully edited.', "status" => true, 'log'=>array($stmt,$edits,$dat, $original_row, $prep))); // TODO cleanup log when finished (for safety)
+            // construct prepared statment for history
+            // has additional _UID_fk & _user fields
+            $types = get_types($dat, $table_class);
+            $dat['_UID_fk'] = $pk_val;
+            $dat['_user'] = get_current_user_id();
+            $dat['_action'] = 'edit';
+            array_push($types, '%d');
+            array_push($types, '%s');
+            array_push($types, '%s');
+            $prep_hist = $wpdb_history->insert($table, $dat, $types);
+
+            if ( $prep && $prep_hist ) {
+                return json_encode(array("msg" => 'Item successfully edited.', "status" => true, 'log'=>array($wpdb_history, $dat, $types))); // TODO cleanup log when finished (for safety)
             } else {
-                return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, 'log'=>array($prep, $edits, $original_row))); // clean up log when finished (for safety)
+                return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, 'log'=>array($table, $dat, $pk_eq, $types, $wpdb))); // clean up log when finished (for safety)
             }
         } else {
             return json_encode(array("msg" => 'Values are not any different than current ones, nothing was edited.', "status" => true));
@@ -603,6 +660,21 @@ function delete_table_from_db() {
 
         $table = $db->get_name() . '.' . $db->get_company() . '_' . $data['table_name'];
         $table_history = $db->get_name() . '_history.' . $db->get_company() . '_' . $data['table_name'];
+
+        // check if table has a key that is referenced as a PK in another table
+        // if so, the ref table must be deleted first
+        $table_class = $db->get_table($db->get_company() . '_' . $data['table_name']);
+        $refs = $table_class->get_ref();
+        if ($refs) {
+            $msg = "This table is referenced by the following fields:<br>";
+            foreach($refs as $ref) {
+                $ref_table = explode('_',explode('.',$ref)[0])[1];
+                $ref_field = explode('.',$ref)[1];
+                $msg .= "$ref_field (in table $ref_table)";
+            }
+            return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false));
+        }
+
 
         $sql = "DROP TABLE " . $table;
         $sql2 = "DROP TABLE " . $table_history;
@@ -671,11 +743,12 @@ function add_table_to_db() {
 
     // each table will have a UID which acts as a unique identifier for the row
     $uid_field = ' _UID int NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT \'{"column_format": "hidden"}\''; 
-    $uid_fk = sprintf(' _UID_fk int NOT NULL COMMENT \'{"column_format": "hidden"}\', FOREIGN KEY (_UID_fk) REFERENCES %s.%s(_UID) ON UPDATE CASCADE ON DELETE RESTRICT', $db->get_name(), $db->get_company() . '_' . $data['table_name']); // fk which references original table (links original table to history)
+    $uid_fk = ' _UID_fk int NOT NULL COMMENT \'{"column_format": "hidden"}\'';
     array_push($fields, $uid_field);
     array_push($history_fields, $uid_field); 
     array_push($history_fields, $uid_fk); 
-    array_push($history_fields, ' `Timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP');
+    array_push($history_fields, ' `_timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP');
+    array_push($history_fields, ' `_action` varchar(15) NOT NULL');
 
     for ($i = 1; $i <= $field_num; $i++) {
         $tmp_sql = '';
@@ -757,7 +830,7 @@ function add_table_to_db() {
 
         if ($i == $field_num) {
 
-            array_push($history_fields, " User varchar(56) NOT NULL"); // add a field for user
+            array_push($history_fields, " `_user` varchar(56) NOT NULL"); // add a field for user
 
         }
 
@@ -782,66 +855,6 @@ function add_table_to_db() {
 }
 
 
-
-/* Put together and execute prepared statement
-
-Parameters:
-===========
-- $stms : str
-          statement with ? vars to be bound
-- $args : assoc array of col:value in which
-          vals will be bound to '?'
-- $types : str 
-           string with length equal to number
-           of variables to bind, representing
-           variable type.  e.g. if 3 strings,
-           then 'sss'
-
-Returns:
-========
-- true if successful query execute, returns error string otherwise
-
-*/
-// https://edorian.github.io/2011-05-12-References-suck-lets-fix-mysqli-prepared-statements/
-function prepare_statement($stmt, $args, $types) {
-
-    $conn = connect_db();
-    $field_vals = array_values($args);
-
-    if ( !( $statement = $conn->prepare($stmt) ) ) {
-        return "Prepare failed: (" . $conn->errno . ") " . $conn->error . '; ' . $stmt;
-    }
-
-    // Skipped error handling for readability
-    $argumentCount = count($field_vals);
-
-    if($statement->param_count == $argumentCount) {
-
-        // Now we need to call 'bind_param'
-        // 'bind_param' is a procedure and the only way to call a procedure with a variable number of field_vals is call_user_func_array
-        // BUT WE NEED TO CALL IT WITH REFERENCES!
-        $callArgs = array();
-        foreach($field_vals as $index => $arg) {
-            $callArgs[$index] = &$field_vals[$index]; // :(
-        }
-        
-        array_unshift($callArgs, $types );
-
-        // Now bind the parameters
-        call_user_func_array(array($statement, 'bind_param'), $callArgs);
-
-        // Now we can execute the statement, finally
-        if ( !$statement->execute() ) {
-            return "SQL error: " . $statement->error . '; ' . $stmt;
-        } else {
-            return true;
-        }
-
-    } else {
-        return false;
-    }
-
-}
 
 
 
