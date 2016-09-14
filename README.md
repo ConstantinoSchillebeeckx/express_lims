@@ -7,7 +7,7 @@
 - [ ] modal for editing field info
 - [ ] batch insert/edit/delete
 - [x] button for deleting record
-- [ ] business logic for tracking history
+- [x] business logic for tracking history
 - [x] add field type to Field class (e.g. Timestamp, Int, varchar)
 - [x] filtering view by clicking on item
 - [ ] add extra fields to user meta (last login, number of logins, payment status...)

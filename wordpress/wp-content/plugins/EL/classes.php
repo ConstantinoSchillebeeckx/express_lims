@@ -253,6 +253,11 @@ class Table {
         return $this->fields;
     }
 
+    // return array of hidden fields in table
+    public function get_hidden_fields() {
+        return array_diff($this->get_fields(), $this->get_visible_fields());
+    }
+
     // return table struct as assoc array
     // keys are field names, values are Field class
     public function get_struct() {

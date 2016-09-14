@@ -1,13 +1,40 @@
 <!-- history modal -->
 <div class="modal fade" id="historyModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content panel-info">
       <div class="modal-header panel-heading">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title"><i class="fa fa-history" aria-hidden="true"></i> Item history</h4>
+        <h4 class="modal-title"><i class="fa fa-history" aria-hidden="true"></i> Item history <span id="historyID"></span></h4>
       </div>
       <div class="modal-body">
-        History for item <span id="historyID"></span>
+
+        <?php // generate table HTML
+        if ( isset( $db ) && isset( $table ) && $table_class != null ) {
+        
+            $fields_hist = $db->get_fields($table); 
+            $fields_hist = array_merge($fields_hist, array('_UID_fk','_timestamp','_user','_action'));
+            $hidden_hist = $table_class->get_hidden_fields();
+            array_push($hidden_hist, '_UID_fk');
+            ?>
+            
+            <table class="table table-bordered table-hover" id="historyTable">
+            <thead>
+            <tr class="info">
+
+            <?php foreach ( $fields_hist as $field ) echo "<th>$field</th>"; ?>
+
+            </tr>
+            </thead>
+            </table>
+
+            <script type="text/javascript">
+                // This will do the AJAX call, func defined in js/table.js
+                var columnHist = <?php echo json_encode( $fields_hist ); ?>;
+                var pk = <?php echo json_encode( $db->get_pk( $table ) ); ?>;
+                var hiddenHist = <?php echo json_encode( $hidden_hist ); ?>;
+            </script>
+        <?php } ?>
+
       </div>
     </div>
   </div>

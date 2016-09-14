@@ -36,8 +36,9 @@ error if connection cannot be made.
 
 Parameters:
 ===========
-- none
-
+- $db_name : str
+             name of database to connect to,
+             defaults to DB_NAME_EL
 Return:
 =======
 - returns a mysqli connection object if
@@ -45,12 +46,14 @@ Return:
   otherwise and return false.
 
 */
-function connect_db() {
+function connect_db($db_name) {
+
+    if (!$db_name) $db_name = DB_NAME_EL;
 
     mb_internal_encoding('UTF-8');
 
     require_once("config/db.php");
-    $conn = new mysqli(DB_HOST_EL, DB_USER_EL, DB_PASS_EL, DB_NAME_EL);
+    $conn = new mysqli(DB_HOST_EL, DB_USER_EL, DB_PASS_EL, $db_name);
 
     if ($conn->connect_errno) {
         err_msg("Could not connect to database!");
@@ -131,6 +134,10 @@ EL.php].
 This is the function that properly parses and sends
 data back for use with datatables.net JS.
 
+NOTE: it is assumed that if the field '_UID_fk' exists
+in the list of provided columns, that the history table
+is requested.
+
 Function assumes that the following are passed:
 - $_GET['table']
 - $_GET['columns']
@@ -139,6 +146,8 @@ Function assumes that the following are passed:
 
 */
 function get_data_from_db() {
+
+    require_once("config/db.php");
 
     /**
      * Script:    DataTables server-side script for PHP 5.2+ and MySQL 4.1+
@@ -170,7 +179,12 @@ function get_data_from_db() {
     /**
      * MySQL connection
      */
-    $conn = connect_db();
+    if (in_array('_UID_fk', $aColumns)) {
+        $conn = connect_db(DB_NAME_EL_HISTORY);
+    } else {
+        $conn = connect_db();
+    }
+
 
     // DB class
     $db = get_db();
@@ -272,7 +286,7 @@ function get_data_from_db() {
         SELECT SQL_CALC_FOUND_ROWS `" . implode("`, `", $aQueryColumns) . "`
         FROM `".$sTable."`".$sWhere.$sOrder.$sLimit;
     $rResult = exec_query($sQuery, $conn);
-    //return $rResult;
+
       
     // Data set length after filtering
     $sQuery = "SELECT FOUND_ROWS()";
@@ -283,7 +297,6 @@ function get_data_from_db() {
     $sQuery = "SELECT COUNT(`".$sIndexColumn."`) FROM `".$sTable."`";
     $rResultTotal = exec_query($sQuery, $conn); 
     list($iTotal) = $rResultTotal->fetch_row();
-      
       
     /**
      * Output
@@ -306,19 +319,21 @@ function get_data_from_db() {
             
                 $col_name = $aColumns[$i];
                 $field_class = $table_class->get_field( $col_name ); // Field class
-                $comment = $field_class->get_comment();
+                if ($field_class) {
+                    $comment = $field_class->get_comment();
 
-                $val = $aRow[ $col_name ];
+                    $val = $aRow[ $col_name ];
 
 
-                // reformat value if needed
-                if ( $comment && array_key_exists('column_format', $comment) ) {
-                    if ( $comment['column_format'] == 'date') {
-                        $val = date('Y-m-d', strtotime($val));
+                    // reformat value if needed
+                    if ( $comment && array_key_exists('column_format', $comment) ) {
+                        if ( $comment['column_format'] == 'date') {
+                            $val = date('Y-m-d', strtotime($val));
+                        }
                     }
-                }
-        
-                if ( $field_class->is_unique() ) { // don't add filter to unique items since it doesnt make sense to filter them
+                } 
+
+                if ( $field_class && $field_class->is_unique() ) { // don't add filter to unique items since it doesnt make sense to filter them
                     $row[] = $val;
                 } else { // format with filter
                     $url = sprintf("%s&filter=%s,%s", $_SERVER['HTTP_REFERER'], $col_name, $val );

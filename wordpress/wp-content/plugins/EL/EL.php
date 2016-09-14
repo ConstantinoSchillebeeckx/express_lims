@@ -123,22 +123,15 @@ function build_table() {
     // generate table HTML
     if ( isset( $db ) && isset( $table ) && $table_class != null ) {
     
-        $fields = $db->get_fields($table); ?>
+        $fields = $db->get_fields($table); 
+        $hidden = $table_class->get_hidden_fields();
+        ?>
         
         <table class="table table-bordered table-hover" id="datatable">
         <thead>
         <tr class="info">
 
-        <?php $hidden = array();
-            
-        foreach ( $fields as $field ) {
-            $field_class = $table_class->get_field( $field );
-            $comment = $field_class->get_comment();
-            if ($comment && array_key_exists('column_format', $comment) && $comment['column_format'] == 'hidden' ) {
-                $hidden[] = $field;
-            }
-            echo sprintf('<th>%s</th>', $field);
-        } ?>
+        <?php foreach ( $fields as $field ) echo "<th>$field</th>"; ?>
 
         <th>Action</th>
         </tr>

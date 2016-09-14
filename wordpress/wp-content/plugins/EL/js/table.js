@@ -16,10 +16,13 @@ Parameters (set by build_table()):
 - pk : primary key of table
 - filter : (optional) filter for table in format {col: val}
 - hidden : (optional) array of column names that should be hidden (e.g. UID)
+- tableID: the ID for the table into which to put data, defaults to #datatable
 */
 
 
-function getData(table, columns, pk, filter, hidden) {
+function getData(table, columns, pk, filter, hidden, tableID) {
+
+    if (!tableID || tableID == null) tableID = '#datatable';
 
 
     // html for Action button column
@@ -31,7 +34,6 @@ function getData(table, columns, pk, filter, hidden) {
 
     jQuery.fn.dataTable.ext.errMode = 'throw'; // Have DataTables throw errors rather than alert() them
 
-    console.log(table, columns, pk, filter, hidden);
 
     // variables set with build_table() defined in EL.php
     var data =  {
@@ -56,11 +58,11 @@ function getData(table, columns, pk, filter, hidden) {
     if (hidden.length) {
         for (var i = 0; i < hidden.length; i++) {
             var idx = columns.indexOf(hidden[i]);
-            colDefs.push({"targets": [ idx ], "visible": false, "searchable": false })
+            colDefs.push({"targets": idx, "visible": false, "searchable": false })
         }
     }
 
-    jQuery('#datatable').DataTable( {
+    jQuery(tableID).DataTable( {
         "processing": true,
         "serverSide": true,
         "responsive": true,
@@ -169,6 +171,10 @@ function historyModal(sel) {
     var val = jQuery(sel).parents("tr").find(">:first-child").html()
     jQuery("#historyID").html( "<code>" + val + "</code>" ); // set PK message
     jQuery('#historyModal').modal('toggle'); // show modal
+
+    // fill talbe with data
+    // vars are defined in modal.php
+    getData(table, columnHist, pk, null, hiddenHist, '#historyTable');
 }
 
 
