@@ -119,7 +119,6 @@ function deleteModal(sel) {
 
 function deleteTableModal(tableName) {
 
-    console.log(tableName)
     event.preventDefault(); // cancel form submission
 
     jQuery("#deleteTableID").html( "<code>" + tableName + "</code>" ); // set PK message
@@ -156,7 +155,12 @@ function deleteItem(id) {
     }
 
     // send data to server
-    doAJAX(data);
+    doAJAX(data, function() {
+        if (ajaxStatus) {
+            jQuery('#datatable').DataTable().draw('page'); // refresh table
+            showMsg(ajaxResponse, false); // success messages dissappear
+        }
+    });
 
 }
 
@@ -311,7 +315,12 @@ function addItem() {
         console.log(data)
      
         // send data to server
-        doAJAX(data);
+        doAJAX(data, function() {
+            if (ajaxStatus) {
+                jQuery('#datatable').DataTable().draw('page'); // refresh table
+                showMsg(ajaxResponse, false); // success messages dissappear
+            }
+        });
     }
     
     jQuery('#addItemModal').modal('toggle'); // hide modal
@@ -340,16 +349,17 @@ function editItem(id) {
             "table": table, // var set by build_table() in EL.php
             "pk": pk, // var set by build_table() in EL.php
             "original_row": originalRowVals, // var set in editModal()
-            "dat": {}, // form values
+            "dat": getFormData('#editItemForm'), // form values
     }
 
-    var formData = jQuery('#editItemForm').serializeArray(); // form data
-    jQuery.each(formData, function() {
-        data.dat[this.name] = this.value;
-    })
 
     // send data to server
-    doAJAX(data);
+    doAJAX(data, function() {
+        if (ajaxStatus) {
+            jQuery('#datatable').DataTable().draw('page'); // refresh table
+            showMsg(ajaxResponse, false); // success messages dissappear
+        }
+    });
 
     jQuery('#editModal').modal('toggle'); // hide modal
 }
@@ -370,11 +380,13 @@ Paramters:
 
 Returns:
 --------
-- will display the proper warning/success message to user
+- on success, will run callback, otherwise will display error message
 
 */
-function doAJAX(data) {
+function doAJAX(data, callback) {
 
+    ajaxStatus = false; // global!
+    ajaxResponse = ''; // global!
 
     // send via AJAX to process with PHP
     jQuery.ajax({
@@ -383,23 +395,17 @@ function doAJAX(data) {
             data: data, 
             dataType: 'json',
             success: function(response) {
-                if (jQuery('#datatable').length) {
-                    jQuery('#datatable').DataTable().draw('page'); // refresh table
-                }
-                console.log(response);
-
-                showMsg(response);
-
-                // add table to nav
-                if (data.action == 'addTable' && response['status']) {
-                    addTableToNav(data.dat.table_name);
-                }
+                ajaxStatus = true;
+                ajaxResponse = response;
+                callback();
             },
             error: function(xhr, status, error) {
+                ajaxResponse = xhr.responseText;
                 console.log(xhr.responseText);
                 showMsg({"msg":"There ws an error, please try again.", "status": false});
-            }
+            },
     });
+
 }
 
 
@@ -598,7 +604,12 @@ function deleteTable(tableName) {
 
 
     // send data to server
-    doAJAX(data);
+    doAJAX(data, function() {
+        if (ajaxStatus) {
+            removeTableFromNav(data.dat.table_name);
+            showMsg(ajaxResponse, false); // success messages dissappear
+        }
+    });
 
     jQuery('#deleteTableModal').modal('toggle'); // hide modal
 }
@@ -638,7 +649,11 @@ function editTable() {
 
 
     // send data to server
-    doAJAX(data);
+    doAJAX(data, function() {
+        if (ajaxStatus) {
+            showMsg(ajaxResponse, false); // success messages dissappear
+        }
+    });
 
 }
 
@@ -705,7 +720,12 @@ function addTable() {
 
      
         // send data to server
-        doAJAX(data);
+        doAJAX(data, function() {
+            if (ajaxStatus) {
+                addTableToNav(data.dat.table_name);
+                showMsg(ajaxResponse, false); // success messages dissappear
+            }
+        });
     }
 
 }
@@ -724,9 +744,35 @@ Parameters:
 */
 function addTableToNav(tableName) {
 
+    if (jQuery('#noTable')) jQuery('#noTable').remove(); // remove placeholder if this is the first table
+
     jQuery('#view_tables').append('<li><a href="/view/?table=' + tableName + '">' + tableName + '</li>'); // XXX path is hard coded TODO
 
 }
+
+
+/* After deleting a table, remove it from the nav bar
+
+Parameters:
+-----------
+- tableName : str
+              safe table name of successfully created table
+
+*/
+function removeTableFromNav(tableName) {
+
+    jQuery('a:contains("' + tableName + '")').parent().remove();
+
+    // if removing last table, add placeholder
+    if (!jQuery('#view_tables li').length) {
+        jQuery('#view_tables').append('<li id="noTable"><a href="#">No tables available</a></li>');
+    }
+
+}
+
+
+
+
 
 
 // http://stackoverflow.com/a/3886106/1153897
@@ -752,7 +798,7 @@ Parameters:
 
 Returns:
 ========
-- obj : will with form input field values
+- obj : with form input field values {name: val}
 
 */
 function getFormData(sel) {

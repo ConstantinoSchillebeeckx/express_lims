@@ -52,7 +52,7 @@ get_header(); ?>
                         <div class="col-sm-offset-4 col-sm-2">
                           <?php if (isset($_GET['table'])) {
                             echo '<div class="pull-right btn-group"><button type="button" class="btn btn-success" onclick="editTable()">Save table</button>';
-                            echo '<button class="btn btn-danger" type="button"><i class="fa fa-times" aria-hidden="true" onclick="deleteTableModal(\'' . $_GET['table'] . '\')"></i></button></div>';
+                            echo '<button class="btn btn-danger" type="button" onclick="deleteTableModal(\'' . $_GET['table'] . '\')"><i class="fa fa-times" aria-hidden="true"></i></button></div>';
                           } else {
                             echo '<button class="btn pull-right btn-success" onclick="addTable()">Create table</button>';
                           }?>
