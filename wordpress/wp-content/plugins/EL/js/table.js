@@ -43,23 +43,22 @@ function getData(table, columns, pk, filter, hidden, tableID) {
 
     // variables set with build_table() defined in EL.php
     var data =  {
-                "action": "viewTable", 
-                "table": table, 
-                "cols": columns,
-                "pk": pk,
-                "filter": filter,
-                }
+        "action": "viewTable", 
+        "table": table, 
+        "cols": columns,
+        "pk": pk,
+        "filter": filter,
+    }
 
-    var colDefs = [];
 
     // set Action column data to empty since we are automatically adding buttons here
-    colDefs.push({ // https://datatables.net/examples/ajax/null_data_source.html
-                "targets": -1,
-                "data": null,
-                "defaultContent": buttonHTML,
-                "width": tableID == '#datatable' ? "70px" : "40px",
-                "orderable": false,
-            });
+    var colDefs = [{ // https://datatables.net/examples/ajax/null_data_source.html
+        "targets": -1,
+        "data": null,
+        "defaultContent": buttonHTML,
+        "width": tableID == '#datatable' ? "70px" : "40px",
+        "orderable": false,
+    }];
 
     // hide any columns listed in hidden
     // also make them non-searchable
@@ -70,11 +69,16 @@ function getData(table, columns, pk, filter, hidden, tableID) {
         }
     }
 
-    console.log(hidden)
+    // crusty workaround for the issue: https://datatables.net/manual/tech-notes/3
+    // first viewing the history modal will initialize the table, looking at the modal
+    // again (e.g. after an edit) will cause this error
+    // work around is to destroy the table initialization and recreate it each time ... :(
+    if (typeof historyTable !== 'undefined' && jQuery.fn.dataTable.isDataTable( '#historyTable' )) {
+        historyTable.destroy();
+    }
 
-    // XXX this gets called each time the history modal is pulled up
-    // this causes a JS error because table is already intialzied (from previous modal call)
-    jQuery(tableID).DataTable( {
+    historyTable = jQuery(tableID).DataTable( {
+        "retrieve": true,
         "processing": true,
         "serverSide": true,
         "ajax": {
@@ -83,6 +87,12 @@ function getData(table, columns, pk, filter, hidden, tableID) {
             },
         "columnDefs": colDefs
     } );
+
+    // destroy global so that we only set this for history table
+    // see workaround above
+    if (tableID == '#datatable') {
+        historyTable = null;
+    }
 
 };
 
@@ -279,7 +289,6 @@ function editModal(sel) {
 
     jQuery("#editID").html( "<code>" + cellVal + "</code>" ); // set PK message
     jQuery('#editModal').modal('toggle'); // show modal
-    jQuery('#confirmEdit').focus();
 
     jQuery("#confirmEdit").attr("onclick", "editItem('" + cellVal + "')");
 }
