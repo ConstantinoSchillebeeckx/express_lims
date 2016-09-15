@@ -39,10 +39,11 @@
             </table>
 
             <script type="text/javascript">
-                // This will do the AJAX call, func defined in js/table.js
                 var columnHist = <?php echo json_encode( $fields_hist ); ?>;
                 var pk = <?php echo json_encode( $db->get_pk( $table ) ); ?>;
                 var hiddenHist = <?php echo json_encode( $hidden_hist ); ?>;
+                // table gets filled once the history button is clicked
+                // this is done by historyModal()
             </script>
         <?php } ?>
 

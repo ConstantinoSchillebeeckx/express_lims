@@ -257,7 +257,7 @@ function get_data_from_db() {
         if ( empty( $aFilteringRules ) ) {
             $aFilteringRules = array( sprintf(" `%s` = '%s' ", $filter_key, $filter_val ) );
         } else {
-            array_push( $aFilteringRules, sprintf(" `%s` = '%s' ", $filter_key, $filter_val ) );
+            $aFilteringRules[] = sprintf(" `%s` = '%s' ", $filter_key, $filter_val );
         }
     }
      
@@ -350,6 +350,72 @@ function get_data_from_db() {
 
 
 
+/* Delete item from DB
+
+Function is called by AJAX when user clicks revert
+button in history modal.  Will take the given primary
+key (which belongs to the col _UID) and set that entry
+within the history table as the current entry in
+the datatable (history equivalent)
+
+Parameters:
+- $_GET['table'] : name of table in which item is located
+- $_GET['pk'] : column in which item exists
+
+*/
+function revert_item_in_db() {
+
+    // get some vars
+    $db = get_db();
+    $table = $_GET['table'];
+    $pk = $_GET['pk'];
+    $table_full_name = DB_NAME_EL . '.' . $table;
+    $table_full_name_hist = DB_NAME_EL_HISTORY . '.' . $table;
+
+
+    // ERROR CHECK ITEM
+    if ( isset( $table ) && isset( $pk ) ) {
+
+        $table_class = $db->get_table($table);
+        $visible_fields = $table_class->get_visible_fields();
+        $wpdb = new wpdb(DB_USER_EL, DB_PASS_EL, DB_NAME_EL, DB_HOST_EL);
+        $wpdb_history = new wpdb(DB_USER_EL, DB_PASS_EL, DB_NAME_EL_HISTORY, DB_HOST_EL);
+
+        // get historical data
+        $dat = $wpdb->get_row( "SELECT * FROM $table_full_name_hist WHERE _UID = $pk", ARRAY_A );
+        $uid_fk = $dat['_UID_fk']; // fk in regular table
+
+        // remove history table specific columns
+        unset($dat['_UID_fk']);
+        unset($dat['_user']);
+        unset($dat['_timestamp']);
+        unset($dat['_action']);
+        unset($dat['_UID']);
+        $types = get_types($dat, $table_class);
+
+        // replace entry in regular table
+        $prep = $wpdb->update($table, $dat, array('_UID' => $uid_fk), $types, array('%d'));
+
+
+        // construct prepared statment for history
+        // has additional _UID_fk, _user & _action fields
+        $dat['_UID_fk'] = $uid_fk;
+        $dat['_user'] = get_current_user_id();
+        $dat['_action'] = 'revert';
+        array_push($types, '%d', '%s', '%s');
+        $prep_hist = $wpdb_history->insert($table, $dat, $types);
+            
+
+        if ( $prep && $prep_hist ) {
+            return json_encode(array("msg" => 'Item successfully reverted.', "status" => true, "hide" => true, "log"=>$wpdb ));
+        } else {
+            return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "hide" => false, "log" => array($types, $wpdb, $wpdb_history) ));
+        }
+    }
+    return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "hide" => false));
+}
+
+
 
 
 
@@ -364,7 +430,6 @@ Parameters:
 - $_GET['id'] : id of the item being deleted
 - $_GET['table'] : name of table in which item is located
 - $_GET['pk'] : column in which item exists
-
 
 */
 function delete_item_from_db() {
@@ -416,9 +481,7 @@ function delete_item_from_db() {
     $dat['_UID_fk'] = $id;
     $dat['_user'] = get_current_user_id();
     $dat['_action'] = 'delete';
-    array_push($types, '%d');
-    array_push($types, '%s');
-    array_push($types, '%s');
+    array_push($types, '%d', '%s', '%s');
     $prep_hist = $wpdb_history->insert($table, $dat, $types);
 
     //$sql = sprintf("DELETE FROM %s WHERE `%s` = '%s'", $table_full_name, $pk, $id);
@@ -506,9 +569,7 @@ function add_item_to_db() {
         $dat['_UID_fk'] = $wpdb->insert_id;
         $dat['_user'] = get_current_user_id();
         $dat['_action'] = 'add';
-        array_push($types, '%d');
-        array_push($types, '%s');
-        array_push($types, '%s');
+        array_push($types, '%d', '%s', '%s');
         $prep_hist = $wpdb_history->insert($table, $dat, $types);
             
 
@@ -630,9 +691,7 @@ function edit_item_in_db() {
             $dat['_UID_fk'] = $pk_val;
             $dat['_user'] = get_current_user_id();
             $dat['_action'] = 'edit';
-            array_push($types, '%d');
-            array_push($types, '%s');
-            array_push($types, '%s');
+            array_push($types, '%d', '%s', '%s');
             $prep_hist = $wpdb_history->insert($table, $dat, $types);
 
             if ( $prep && $prep_hist ) {
@@ -758,12 +817,8 @@ function add_table_to_db() {
 
     // each table will have a UID which acts as a unique identifier for the row
     $uid_field = ' _UID int NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT \'{"column_format": "hidden"}\''; 
-    $uid_fk = ' _UID_fk int NOT NULL COMMENT \'{"column_format": "hidden"}\'';
-    array_push($fields, $uid_field);
-    array_push($history_fields, $uid_field); 
-    array_push($history_fields, $uid_fk); 
-    array_push($history_fields, ' `_timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP');
-    array_push($history_fields, ' `_action` varchar(15) NOT NULL');
+    $fields[] = $uid_field;
+    array_push($history_fields, $uid_field, ' _UID_fk int NOT NULL COMMENT \'{"column_format": "hidden"}\'', ' `_timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP', ' `_action` varchar(15) NOT NULL');
 
     for ($i = 1; $i <= $field_num; $i++) {
         $tmp_sql = '';
@@ -832,22 +887,18 @@ function add_table_to_db() {
 
         $field_unique ? $tmp_sql .= " UNIQUE" : null;
   
-        array_push($fields, $tmp_sql); 
-        array_push($history_fields, str_replace(array(' UNIQUE', ' NOT NULL'),'', $tmp_sql) ); // only the manually added UID field can be unique
+        $fields[] = $tmp_sql; 
+        $history_fields[] = str_replace(array(' UNIQUE', ' NOT NULL'),'', $tmp_sql); // only the manually added UID field can be unique
 
         // if FK type was requested, add the constraint
         if ($data['type-' . $i] == 'fk') {
             $fk_tmp = sprintf("FOREIGN KEY fk_%s(%s) REFERENCES %s(%s)", $field_name, $field_name, $fk_table, $fk_col);
-            array_push($fields, $fk_tmp);
+            $fields[] = $fk_tmp;
         }
  
         $field_unique && $field_required ? $has_uid = true : null; // set flag if unique field found
 
-        if ($i == $field_num) {
-
-            array_push($history_fields, " `_user` varchar(56) NOT NULL"); // add a field for user
-
-        }
+        if ($i == $field_num) $history_fields[] = " `_user` varchar(56) NOT NULL"; // add a field for user
 
     
     } 
@@ -858,7 +909,7 @@ function add_table_to_db() {
     $res2 = exec_query($sql2);
 
     if ($res && $res2) {
-        $msg = sprintf("The table <code>%s</code> was properly created; being adding <a href='%s'>data</a>.", $data['table_name'], VIEW_TABLE_URL_PATH . '?table=' . $data['table_name']);
+        $msg = sprintf("The table <code>%s</code> was properly created; begin adding <a href='%s'>data</a>.", $data['table_name'], VIEW_TABLE_URL_PATH . '?table=' . $data['table_name']);
         $ret = array("msg" => $msg, "status" => true, "log"=>$sql, "hide" => true);
         init_db(); // refresh so that table will show up in menu
         return json_encode($ret);

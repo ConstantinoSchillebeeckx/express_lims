@@ -34,7 +34,7 @@ function getData(table, columns, pk, filter, hidden, tableID) {
         buttonHTML += '</div>';
     } else if (tableID == '#historyTable') {
         var buttonHTML = '<div class="text-center">';
-        buttonHTML += '<button onclick="#" type="button" class="btn btn-info btn-xs" title="History"><i class="fa fa-undo" aria-hidden="true"></i></button>'
+        buttonHTML += '<button onclick="revertHistory(this)" type="button" class="btn btn-info btn-xs" title="History"><i class="fa fa-undo" aria-hidden="true"></i></button>'
         buttonHTML += '</div>';
     }
 
@@ -72,6 +72,8 @@ function getData(table, columns, pk, filter, hidden, tableID) {
 
     console.log(hidden)
 
+    // XXX this gets called each time the history modal is pulled up
+    // this causes a JS error because table is already intialzied (from previous modal call)
     jQuery(tableID).DataTable( {
         "processing": true,
         "serverSide": true,
@@ -116,7 +118,12 @@ function deleteModal(sel) {
 
 
 
+/* Called when delete table button clicked
 
+Cancels form submission and pulls up the
+delete table modal
+
+*/
 function deleteTableModal(tableName) {
 
     event.preventDefault(); // cancel form submission
@@ -128,6 +135,46 @@ function deleteTableModal(tableName) {
 
 }
 
+
+
+
+/* Function called when revert button is clicked in history modal
+
+Parameters:
+-----------
+- sel : will be the 'a' selection of the button that was clicked
+
+*/
+function revertHistory(sel) {
+
+
+    // lookup data for the row that was selected by button click
+    var rowNum = jQuery(sel).closest('tr').index();
+    var dat = jQuery('#historyTable').DataTable().row(rowNum).data();
+    
+    // NOTE: it is assumed the first column (which is hidden) is _UID
+    // and that it unique identifies the row
+    var pkVal = dat[0];
+
+    jQuery('#historyModal').modal('toggle'); // hide modal
+
+    var data = {
+            "action": "revertItem", 
+            "table": table, // var set by build_table() in EL.php
+            "pk": pkVal, 
+    }
+
+    // send data to server
+    doAJAX(data, function() {
+        if (ajaxStatus) {
+            jQuery('#datatable').DataTable().draw('page'); // refresh table
+            showMsg(ajaxResponse);
+        } else {
+            showMsg({"msg":"There was an error deleting the item, please try again.", "status": false, 'hide': false});
+            console.log(ajaxResponse);
+        }
+    });
+}
 
 
 

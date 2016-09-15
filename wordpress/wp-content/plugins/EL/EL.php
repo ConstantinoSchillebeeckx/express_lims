@@ -214,6 +214,15 @@ function deleteItem_callback() {
     wp_die(); // this is required to terminate immediately and return a proper response
 }
 
+// revert item (row) in DB (history change)
+add_action( 'wp_ajax_revertItem', 'revertItem_callback' );
+function revertItem_callback() {
+
+    echo revert_item_in_db(); // defined in server_processing.php
+
+    wp_die(); // this is required to terminate immediately and return a proper response
+}
+
 // add item (row) to db
 add_action( 'wp_ajax_addItem', 'addItem_callback' );
 function addItem_callback() {
