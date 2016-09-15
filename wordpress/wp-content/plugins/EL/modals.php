@@ -17,7 +17,7 @@
             array_push($hidden_hist, '_UID_fk');
             ?>
             
-            <table class="table table-bordered table-hover table-responsive" id="historyTable">
+            <table class="table table-bordered table-hover table-responsive" id="historyTable" width="100%">
             <thead>
             <tr class="info">
 
