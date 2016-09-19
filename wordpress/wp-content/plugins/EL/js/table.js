@@ -414,7 +414,7 @@ function editItem(id) {
                 "original_row": originalRowVals, // var set in editModal()
                 "dat": getFormData('#editItemForm'), // form values
         }
-
+        console.log(data);
 
         // send data to server
         doAJAX(data, function() {
@@ -468,6 +468,7 @@ function doAJAX(data, callback) {
             type: "GET",
             data: data, 
             dataType: 'json',
+            contentType: "application/json; charset=utf-8",
             success: function(response) {
                 ajaxStatus = true;// response.status; // NOTE can be true or false (e.g. edit item issue)
                 ajaxResponse = response;
@@ -546,7 +547,7 @@ Will add all the necessarry GUI fields for defining a given field
 function addField() {
     fieldNum += 1;
             //'<button type="button" class="close" data-target="#field-' + fieldNum + '" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>',
-    var dom = ['<div class="panel panel-default" style="margin-bottom:40px;" id="field-' + fieldNum + '">',
+    var dom = ['<div class="panel panel-default" style="margin-bottom:20px;" id="field-' + fieldNum + '">',
             '<div class="panel-heading">',
             '<span class="panel-title">Field #' + fieldNum + '</span>',
             '<button type="button" onclick="fieldNum-=1;" class="close" data-dismiss="alert" data-target="#field-' + fieldNum + '"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>',
@@ -888,11 +889,13 @@ function getFormData(sel) {
         var val = this.value;
         if (val == 'on') {
             val = true;
+        } else if (val == '') {
+            val = null;
         }
         data[this.name] = val;
     })
 
-    return data;
+    return JSON.stringify(data);
 
 }
 

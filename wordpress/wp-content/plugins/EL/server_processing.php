@@ -655,7 +655,7 @@ function edit_item_in_db() {
     $table = $_GET['table'];
     $table_class = $db->get_table($table);
     $visible = $table_class->get_visible_fields();
-    $dat = $_GET['dat'];
+    $dat = str_replace('}"', "}'", str_replace('"{', "'{", $_GET['dat'])); // not getting decoded properly XXX
     $pk = $_GET['pk'];
     $original_row = $_GET['original_row'];
     $pk_val = $original_row[$pk];
@@ -707,7 +707,7 @@ function edit_item_in_db() {
             return json_encode(array("msg" => 'Values are not any different than current ones, nothing was edited.', "status" => false, "hide" => false, "log"=>array($edits, $original_row, $dat)));
         }
     }
-    return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "hide" => false));
+    return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "hide" => false, "log"=>array($dat, $_GET['dat'])));
 
 }
 
