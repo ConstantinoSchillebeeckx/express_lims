@@ -54,7 +54,7 @@ get_header(); ?>
                             echo '<div class="pull-right btn-group"><button type="button" class="btn btn-success" onclick="editTable()">Save table</button>';
                             echo '<button class="btn btn-danger" type="button" onclick="deleteTableModal(\'' . $_GET['table'] . '\')"><i class="fa fa-times" aria-hidden="true"></i></button></div>';
                           } else {
-                            echo '<button class="btn pull-right btn-success" onclick="addTable()">Create table</button>';
+                            echo '<button type="button" class="btn pull-right btn-success" onclick="addTable()">Create table</button>';
                           }?>
                         </div>
                       </div>

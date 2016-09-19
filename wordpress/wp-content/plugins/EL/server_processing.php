@@ -653,6 +653,8 @@ function edit_item_in_db() {
 
     $db = get_db();
     $table = $_GET['table'];
+    $table_class = $db->get_table($table);
+    $visible = $table_class->get_visible_fields();
     $dat = $_GET['dat'];
     $pk = $_GET['pk'];
     $original_row = $_GET['original_row'];
@@ -664,11 +666,13 @@ function edit_item_in_db() {
 
         // FIND ITEMS THAT WERE CHANGED
         $edits = array();
-        foreach ($dat as $field => $new) {
-            $new == '' ? $new = null : null;
-            $original = $original_row[$field];
-            if ($original != $new) {
-                $edits[$field] = $new;
+        foreach ($original_row as $field => $original) {
+            if (in_array($field, $visible)) { // only check changes on visible fields
+                isset($dat[$field]) ? $new = $dat[$field] : null;
+                $new == '' ? $null = null : null;
+                if ($original != $new) {
+                    $edits[$field] = $new;
+                }
             }
         }
     
@@ -700,7 +704,7 @@ function edit_item_in_db() {
                 return json_encode(array("msg" => 'There was an error, please try again.', "hide" => false, "status" => false, 'log'=>array($table, $dat, $pk_eq, $types, $wpdb))); // clean up log when finished (for safety)
             }
         } else {
-            return json_encode(array("msg" => 'Values are not any different than current ones, nothing was edited.', "status" => false, "hide" => true));
+            return json_encode(array("msg" => 'Values are not any different than current ones, nothing was edited.', "status" => false, "hide" => false, "log"=>array($edits, $original_row, $dat)));
         }
     }
     return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "hide" => false));

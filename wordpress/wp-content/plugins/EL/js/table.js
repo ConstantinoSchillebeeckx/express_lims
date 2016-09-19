@@ -386,7 +386,6 @@ function addItem() {
     }
     
     jQuery('#addItemModal').modal('toggle'); // hide modal
-
 }
 
 
@@ -405,28 +404,37 @@ Parameters:
 function editItem(id) {
 
     event.preventDefault(); // cancel form submission
+    jQuery('#submit_handle').click(); // needed to validate form
 
-    var data = {
-            "action": "editItem", 
-            "table": table, // var set by build_table() in EL.php
-            "pk": pk, // var set by build_table() in EL.php
-            "original_row": originalRowVals, // var set in editModal()
-            "dat": getFormData('#editItemForm'), // form values
-    }
-
-
-    // send data to server
-    doAJAX(data, function() {
-        if (ajaxStatus) {
-            jQuery('#datatable').DataTable().draw('page'); // refresh table
-            showMsg(ajaxResponse);
-        } else {
-            showMsg({"msg":"There was an error editing the item, please try again.", "status": false, 'hide': false});
-            console.log(ajaxReponse);
+    if (jQuery('form')[0].checkValidity()) { // if valid, load
+        var data = {
+                "action": "editItem", 
+                "table": table, // var set by build_table() in EL.php
+                "pk": pk, // var set by build_table() in EL.php
+                "original_row": originalRowVals, // var set in editModal()
+                "dat": getFormData('#editItemForm'), // form values
         }
-    });
 
-    jQuery('#editModal').modal('toggle'); // hide modal
+
+        // send data to server
+        doAJAX(data, function() {
+            if (ajaxStatus) {
+                if (ajaxResponse.status === true) {
+                    jQuery('#datatable').DataTable().draw('page'); // refresh table
+                    jQuery('#editModal').modal('toggle'); // hide modal
+                    showMsg(ajaxResponse);
+                } else { // if an error was caught, show message in modal
+                    showMsg(ajaxResponse, ".modal-body");
+                }
+                console.log(ajaxResponse);
+            } else {
+                showMsg({"msg":"There was an error editing the item, please try again.", "status": false, 'hide': false});
+                console.log(ajaxReponse);
+
+                jQuery('#editModal').modal('toggle'); // hide modal
+            }
+        });
+    }
 }
 
 
@@ -461,7 +469,7 @@ function doAJAX(data, callback) {
             data: data, 
             dataType: 'json',
             success: function(response) {
-                ajaxStatus = true;
+                ajaxStatus = true;// response.status; // NOTE can be true or false (e.g. edit item issue)
                 ajaxResponse = response;
             },
             error: function(xhr, status, error) {
@@ -504,15 +512,19 @@ Parameters:
         -> msg : msg to display
         -> status : bool - true if success msg, false if error msg
         -> hide : bool - true will auto-hide message after 3s (if key is ommited, message will hide)
+- sel : str
+        selector into which alert is placed (will to a jQuery prepend()); if none provided it will be "main"
 */
-function showMsg(dat) {
+function showMsg(dat, sel) {
+
+    if (sel == null) { sel = 'main' };
 
     var type = dat.status ? 'success' : 'danger';
     var msg = dat.msg;
     var hide = dat.hide; // true will auto-remove the message, false will keep message on scree
     var alertDiv = '<div id="alertDiv" class="alert alert-' + type + ' alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>' + msg + '</div>';
 
-    jQuery( alertDiv ).prependTo( "main" );
+    jQuery( alertDiv ).prependTo( sel );
 
     // automatically hide msg after 3s
     var timeout = setTimeout(function () {
@@ -874,12 +886,10 @@ function getFormData(sel) {
 
     jQuery.each(formData, function() {
         var val = this.value;
-        if (val != '') { // don't capture empty fields
-            if (val == 'on') {
-                val = true;
-            }
-            data[this.name] = val;
+        if (val == 'on') {
+            val = true;
         }
+        data[this.name] = val;
     })
 
     return data;

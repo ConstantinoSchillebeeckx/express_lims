@@ -63,15 +63,16 @@
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <h4 class="modal-title"><i class="fa fa-pencil-square-o text" aria-hidden="true"></i> Edit item</h4>
             </div>
-            <form class="form-horizontal" id='editItemForm' onsubmit="editItem()">
+            <form class="form-horizontal" onsubmit="return false;" id="editItemForm">
                 <div class="modal-body">
                     <p class="lead">Editing the item <span id="editID"></span></p>
                     <?php get_form_table_row($table); // vars defined by build_table() in EL.php ?>
                 </div>
                 <div class="modal-footer">
                     <a href="#" class="btn" data-dismiss="modal">Cancel</a>
-                    <button type="button" class="btn btn-warning" id="confirmEdit">Save changes</button>
+                    <button type="button" class="btn btn-warning" id="confirmEdit" onclick="editItem()">Save changes</button>
                 </div>
+                <input id="submit_handle" type="submit" style="display: none"> <!-- needed for validating form -->
             </form>
         </div>
     </div>
@@ -128,7 +129,7 @@
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <h4 class="modal-title"><i class="fa fa-plus" aria-hidden="true"></i> Add item</h4>
             </div>
-            <form class="form-horizontal" id='addItemForm' onsubmit="addItem()">
+            <form class="form-horizontal" onsubmit="addItem()" id="addItemForm">
                 <div class="modal-body">
                         <?php get_form_table_row($table); // vars defined by build_table() in EL.php ?>
                 </div>
