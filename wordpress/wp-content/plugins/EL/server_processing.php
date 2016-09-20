@@ -655,7 +655,7 @@ function edit_item_in_db() {
     $table = $_GET['table'];
     $table_class = $db->get_table($table);
     $visible = $table_class->get_visible_fields();
-    $dat = str_replace('}"', "}'", str_replace('"{', "'{", $_GET['dat'])); // not getting decoded properly XXX
+    $dat = json_decode(stripslashes($_GET['dat']), true); // not getting decoded properly XXX
     $pk = $_GET['pk'];
     $original_row = $_GET['original_row'];
     $pk_val = $original_row[$pk];
@@ -668,7 +668,7 @@ function edit_item_in_db() {
         $edits = array();
         foreach ($original_row as $field => $original) {
             if (in_array($field, $visible)) { // only check changes on visible fields
-                isset($dat[$field]) ? $new = $dat[$field] : null;
+                array_key_exists($field, $dat) ? $new = $dat[$field] : null;
                 $new == '' ? $null = null : null;
                 if ($original != $new) {
                     $edits[$field] = $new;
@@ -706,9 +706,9 @@ function edit_item_in_db() {
         } else {
             return json_encode(array("msg" => 'Values are not any different than current ones, nothing was edited.', "status" => false, "hide" => false, "log"=>array($edits, $original_row, $dat)));
         }
+    } else {
+        return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "hide" => false, "log"=>array($dat, $_GET['dat'], json_last_error())));
     }
-    return json_encode(array("msg" => 'There was an error, please try again.', "status" => false, "hide" => false, "log"=>array($dat, $_GET['dat'])));
-
 }
 
 
