@@ -798,7 +798,7 @@ function addTable() {
         // send data to server
         doAJAX(data, function() {
             if (ajaxStatus) {
-                addTableToNav(data.dat.table_name);
+                addTableToNav(jQuery('[name="table_name"').val());
                 showMsg(ajaxResponse);
                 // should update js var DB here ...
             } else {
