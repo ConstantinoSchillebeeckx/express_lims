@@ -677,6 +677,7 @@ function deleteTable(tableName) {
         if (ajaxStatus) {
             removeTableFromNav(data.dat.table_name);
             showMsg(ajaxResponse);
+            console.log(ajaxResponse);
         } else {
             showMsg({"msg":"There was an error deleting the table, please try again.", "status": false, 'hide': false});
             console.log(ajaxReponse);
@@ -761,7 +762,7 @@ function addTable() {
         for (var i in db['tables']) {
             var table = db['tables'][i];
             var table_safe = table.split('_')[1];
-            if (table_safe.toLowerCase() == data.dat.table_name.toLowerCase()) {
+            if (table_safe.toLowerCase() == jQuery('[name="table_name"').val().toLowerCase()) {
                 showMsg({'msg':'Table name <code>' + table_safe + '</code> already exists, please choose another.', 'status':false, 'hide': false});
                 return;
             }
@@ -799,6 +800,7 @@ function addTable() {
             if (ajaxStatus) {
                 addTableToNav(data.dat.table_name);
                 showMsg(ajaxResponse);
+                // should update js var DB here ...
             } else {
                 showMsg({"msg":"There was an error creating the table, please try again.", "status": false, 'hide': false});
                 console.log(ajaxReponse);

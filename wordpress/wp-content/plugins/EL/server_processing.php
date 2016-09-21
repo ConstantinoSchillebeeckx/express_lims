@@ -547,7 +547,7 @@ function add_item_to_db() {
     $wpdb = new wpdb(DB_USER_EL, DB_PASS_EL, DB_NAME_EL, DB_HOST_EL);
     $wpdb_history = new wpdb(DB_USER_EL, DB_PASS_EL, DB_NAME_EL_HISTORY, DB_HOST_EL);
     $table = $_GET['table'];
-    $dat = $_GET['dat'];
+    $dat = json_decode(stripslashes($_GET['dat']), true);
     $pk = $_GET['pk'];
 
     // ERROR CHECK ITEM
@@ -655,7 +655,7 @@ function edit_item_in_db() {
     $table = $_GET['table'];
     $table_class = $db->get_table($table);
     $visible = $table_class->get_visible_fields();
-    $dat = json_decode(stripslashes($_GET['dat']), true); // not getting decoded properly XXX
+    $dat = json_decode(stripslashes($_GET['dat']), true);
     $pk = $_GET['pk'];
     $original_row = $_GET['original_row'];
     $pk_val = $original_row[$pk];
@@ -750,7 +750,8 @@ function delete_table_from_db() {
                 $ref_field = explode('.',$ref)[1];
                 $msg .= "$ref_field (in table $ref_table)";
             }
-            return json_encode(array("msg"=>"There was an error, please try again.", "status"=>false, "hide" => false));
+            $msg .="You must delete those fields first, before deleting this table";
+            return json_encode(array("msg"=>$msg, "status"=>false, "hide" => false));
         }
 
 
@@ -801,7 +802,7 @@ function add_table_to_db() {
 
     $db = get_db();
 
-    $data = $_GET['dat'];
+    $data = json_decode(stripslashes($_GET['dat']), true);
     $field_num = $_GET['field_num'];
 
 
@@ -822,7 +823,7 @@ function add_table_to_db() {
     // each table will have a UID which acts as a unique identifier for the row
     $uid_field = ' _UID int NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT \'{"column_format": "hidden"}\''; 
     $fields[] = $uid_field;
-    array_push($history_fields, $uid_field, ' _UID_fk int NOT NULL COMMENT \'{"column_format": "hidden"}\'', ' `_timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP', ' `_action` varchar(15) NOT NULL');
+    array_push($history_fields, $uid_field, ' `_UID_fk` int NOT NULL COMMENT \'{"column_format": "hidden"}\'', ' `_timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP', ' `_action` varchar(15) NOT NULL', ' INDEX `_UID_fk_IX` (`_UID_FK`)', ' INDEX `_timestamp_IX` (`_timestamp`)', ' INDEX `_action_IX` (`_action`)');
 
     for ($i = 1; $i <= $field_num; $i++) {
         $tmp_sql = '';
@@ -831,6 +832,7 @@ function add_table_to_db() {
         $field_current = isset($data['currentDate-' . $i]) ? $data['currentDate-' . $i] : false;
         $field_required = isset($data['required-' . $i]) ? $data['required-' . $i] : false;
         $field_unique = isset($data['unique-' . $i]) ? $data['unique-' . $i] : false;
+        $field_ix = sprintf(' INDEX `%s_IX` (`%s`)', $field_name, $field_name);
 
         $field_current ? $field_default = true : null;
 
@@ -867,6 +869,7 @@ function add_table_to_db() {
             }
         }
 
+        // set field type
         if ($field_type == 'int') {
             $tmp_sql .= " `$field_name` int(32)";
         } else if ($field_type == 'varchar') {
@@ -879,6 +882,7 @@ function add_table_to_db() {
             $tmp_sql .= " `$field_name` $field_type";
         }
 
+        // add comment if one exists
         if ($comment) {
             $tmp_sql .= $comment;
         }
@@ -893,6 +897,10 @@ function add_table_to_db() {
   
         $fields[] = $tmp_sql; 
         $history_fields[] = str_replace(array(' UNIQUE', ' NOT NULL'),'', $tmp_sql); // only the manually added UID field can be unique
+
+        // add indexes to each field type (except for those that are unique in the non-history table or are FK)
+        $history_fields[] = $field_ix;
+        if ($field_type != 'fk' && !$field_unique) $fields[] = $field_ix;
 
         // if FK type was requested, add the constraint
         if ($data['type-' . $i] == 'fk') {
