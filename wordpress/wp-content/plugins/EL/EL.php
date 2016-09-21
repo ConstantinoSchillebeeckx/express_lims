@@ -454,6 +454,8 @@ function EL_conditional_scripts() {
     if (is_page('view')) {
         wp_enqueue_style('datatables', 'https://cdn.datatables.net/v/bs/dt-1.10.12/r-2.1.0/datatables.min.css');
         wp_enqueue_script('datatables', 'https://cdn.datatables.net/v/bs/dt-1.10.12/r-2.1.0/datatables.min.js');
+        wp_enqueue_script('table2CSV', plugin_dir_url( __FILE__ ) . '/js/jquery.TableCSVExport.js');
+
     }
 
 }

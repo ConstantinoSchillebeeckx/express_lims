@@ -964,9 +964,45 @@ function getFKchoices(id=null) {
 
 
 
+/* Called on click of download button
+
+Will save current viewed table as CSV file
+with the proper columns removed (e.g. Action).
+File name will be name of table.
+
+see: https://github.com/ZachWick/TableCSVExport
+
+Parameters:
+-----------
+- tableName : str
+              table name being saved to CSV
+
+*/
+function downloadCSV(tableName) {
+
+    // get column headers and specify
+    // which to hide
+    var tableHead = jQuery('#datatable').DataTable().table().header();
+    var cols = jQuery(tableHead).find('tr').children();
+    var allCols = [];
+    var saveCols = []; // these are the columns that are exported
+    var ignoreCols = ['Action'];
+    jQuery.each( cols, function(i, val) { 
+        var col = jQuery(val).text();
+        allCols.push(col);
+        if ( jQuery.inArray(col, ignoreCols) == -1) saveCols.push(col);
+    } )
 
 
+    event.preventDefault();
+    jQuery('#datatable').TableCSVExport({
+        delivery: 'download',
+        filename: tableName + '.csv',
+        header: allCols,
+        columns: saveCols
+    });
 
+}
 
 
 
