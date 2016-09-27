@@ -628,7 +628,7 @@ function selectChange(id){
 
     } else if (val == 'date') {
         html = '<span>A date field is used for values with a date part but no time part; it is stored in the format <em>YYYY-MM-DD</em> and there fore can only contain numbers and dashes, for example <code>2015-03-24</code>. </span><br>';
-        html +='<input type="checkbox" clas="form-control" name="currentDate-' + id + '"> check if you want this field automatically filled with the date at the time of editing.';
+        html +='<label class="checkbox-inline"><input type="checkbox" clas="form-control" name="currentDate-' + id + '" onchange="toggleDate(this)"> check if you want this field automatically filled with the date at the time of editing.</label>';
         hidden.html(html);
     } else if (val == 'varchar') {
         hidden.html('<p>A string field can be contain letters, numbers and various other characters such as commas or dashes.</p>');
@@ -638,10 +638,38 @@ function selectChange(id){
         hidden.html('<p>A float field can only contain numbers as well as a decimal point, for example <code>89.45</code></p>');
     } else if (val == 'datetime') {
         html = '<span>A date time field is used is used for values that contain both date and time parts, it is stored in the format <em>YYYY-MM-DD HH:MM:SS</em>, for example <code>2023-01-19 03:14:07</code></span><br>';
-        html +='<input type="checkbox" clas="form-control" name="currentDate-' + id + '"> check if you want this field automatically filled with the date & time at editing';
+        html +='<label class="checkbox-inline"><input type="checkbox" clas="form-control" name="currentDate-' + id + '" onchange="toggleDate(this)"> check if you want this field automatically filled with the date & time at editing.</label>';
         hidden.html(html);
     }
 }
+
+
+
+/*
+
+Function called every time the checkbox is selected
+for automatically filling field with date or
+date/time.
+
+Used to uncheck/disable the required/unique
+checkboxes since they don't make sense when 
+automatically setting the date.
+
+*/
+function toggleDate(checkBox) {
+
+    // if user selects checkbox, uncheck
+    // the required and unique and disable
+    if (jQuery(checkBox).is(':checked')) {
+        jQuery("[name^=unique-]").prop('checked', false).prop('disabled', true);
+        jQuery("[name^=required-]").prop('checked', false).prop('disabled', true);
+    }
+
+}
+
+
+
+
 
 
 /*
